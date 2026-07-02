@@ -4,11 +4,11 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.echonote.app.EchoNoteApp
+import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
 import com.echonote.app.util.AudioPlayerController
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -20,8 +20,7 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
     val note: StateFlow<Note?> = repository.observeById(noteId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val availableFolders: StateFlow<List<String>> = repository.observeAll()
-        .map { list -> list.mapNotNull { it.folder.takeIf { f -> f.isNotBlank() } }.distinct().sorted() }
+    val availableFolders: StateFlow<List<Folder>> = repository.observeFolders()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveTitleAndContent(title: String, content: String) {
@@ -45,9 +44,17 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
         viewModelScope.launch { repository.update(current.copy(tags = tags.joinToString(","))) }
     }
 
-    fun setFolder(folder: String) {
+    fun setFolder(folderId: Long?) {
         val current = note.value ?: return
-        viewModelScope.launch { repository.update(current.copy(folder = folder)) }
+        viewModelScope.launch { repository.update(current.copy(folderId = folderId)) }
+    }
+
+    fun createAndSetFolder(name: String, colorIndex: Int) {
+        val current = note.value ?: return
+        viewModelScope.launch {
+            val id = repository.createFolder(name, colorIndex)
+            repository.update(current.copy(folderId = id))
+        }
     }
 
     fun deleteNote(onDeleted: () -> Unit) {

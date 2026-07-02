@@ -137,6 +137,7 @@ fun NoteDetailScreen(
     }
 
     if (showFolderDialog) {
+        var newFolderColor by remember { mutableStateOf(0) }
         AlertDialog(
             onDismissRequest = { showFolderDialog = false },
             title = { Text(stringResource(R.string.detail_move_to_folder)) },
@@ -147,24 +148,34 @@ fun NoteDetailScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
-                                viewModel.setFolder("")
+                                viewModel.setFolder(null)
                                 showFolderDialog = false
                             }
                             .padding(vertical = 10.dp),
                         style = MaterialTheme.typography.bodyLarge,
                     )
                     availableFolders.forEach { folder ->
-                        Text(
-                            text = folder,
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .clickable {
-                                    viewModel.setFolder(folder)
+                                    viewModel.setFolder(folder.id)
                                     showFolderDialog = false
                                 }
                                 .padding(vertical = 10.dp),
-                            style = MaterialTheme.typography.bodyLarge,
-                        )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(
+                                        NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() },
+                                        CircleShape,
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(folder.name, style = MaterialTheme.typography.bodyLarge)
+                        }
                     }
                     Spacer(modifier = Modifier.height(8.dp))
                     OutlinedTextField(
@@ -173,23 +184,33 @@ fun NoteDetailScreen(
                         placeholder = { Text(stringResource(R.string.folder_new_hint)) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                        keyboardActions = KeyboardActions(onDone = {
-                            val name = newFolderInput.trim()
-                            if (name.isNotEmpty()) {
-                                viewModel.setFolder(name)
-                                newFolderInput = ""
-                                showFolderDialog = false
-                            }
-                        }),
                         modifier = Modifier.fillMaxWidth(),
                     )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        NoteTagColors.forEachIndexed { index, color ->
+                            Box(
+                                modifier = Modifier
+                                    .size(22.dp)
+                                    .background(color, CircleShape)
+                                    .then(
+                                        if (index == newFolderColor) {
+                                            Modifier.border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape)
+                                        } else {
+                                            Modifier
+                                        }
+                                    )
+                                    .clickable { newFolderColor = index },
+                            )
+                        }
+                    }
                 }
             },
             confirmButton = {
                 TextButton(onClick = {
                     val name = newFolderInput.trim()
                     if (name.isNotEmpty()) {
-                        viewModel.setFolder(name)
+                        viewModel.createAndSetFolder(name, newFolderColor)
                         newFolderInput = ""
                     }
                     showFolderDialog = false
@@ -308,15 +329,17 @@ fun NoteDetailScreen(
                 )
             }
 
-            if (!note?.folder.isNullOrBlank()) {
+            val currentFolder = availableFolders.find { it.id == note?.folderId }
+            if (currentFolder != null) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.clickable { showFolderDialog = true },
                 ) {
-                    Icon(Icons.Filled.Folder, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+                    val folderColor = NoteTagColors.getOrElse(currentFolder.colorIndex) { NoteTagColors.first() }
+                    Icon(Icons.Filled.Folder, contentDescription = null, tint = folderColor, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(note?.folder.orEmpty(), style = MaterialTheme.typography.labelLarge, color = accent)
+                    Text(currentFolder.name, style = MaterialTheme.typography.labelLarge, color = folderColor)
                 }
             }
 

@@ -19,11 +19,13 @@ import androidx.navigation.navArgument
 import com.echonote.app.ui.screens.NoteDetailScreen
 import com.echonote.app.ui.screens.NoteListScreen
 import com.echonote.app.ui.screens.RecordScreen
+import com.echonote.app.ui.screens.SettingsScreen
 import com.echonote.app.ui.theme.EchoNoteTheme
 
 private const val ROUTE_LIST = "list"
 private const val ROUTE_RECORD = "record"
 private const val ROUTE_DETAIL = "detail/{noteId}"
+private const val ROUTE_SETTINGS = "settings"
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,7 +57,11 @@ private fun EchoNoteNavHost() {
             NoteListScreen(
                 onNoteClick = { id -> navController.navigate("detail/$id") },
                 onRecordClick = { navController.navigate(ROUTE_RECORD) },
+                onSettingsClick = { navController.navigate(ROUTE_SETTINGS) },
             )
+        }
+        composable(ROUTE_SETTINGS) {
+            SettingsScreen(onBack = { navController.popBackStack() })
         }
         composable(ROUTE_RECORD) {
             RecordScreen(

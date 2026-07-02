@@ -6,7 +6,10 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.File
 
-class NoteRepository(private val dao: NoteDao) {
+class NoteRepository(
+    private val dao: NoteDao,
+    private val folderDao: FolderDao,
+) {
 
     fun observeAll(): Flow<List<Note>> = dao.observeAll()
 
@@ -28,13 +31,30 @@ class NoteRepository(private val dao: NoteDao) {
         dao.delete(note)
     }
 
+    fun observeFolders(): Flow<List<Folder>> = folderDao.observeAll()
+
+    suspend fun createFolder(name: String, colorIndex: Int): Long = withContext(Dispatchers.IO) {
+        folderDao.insert(Folder(name = name, colorIndex = colorIndex))
+    }
+
+    suspend fun updateFolder(folder: Folder) = withContext(Dispatchers.IO) {
+        folderDao.update(folder)
+    }
+
+    suspend fun deleteFolder(folder: Folder) = withContext(Dispatchers.IO) {
+        dao.clearFolder(folder.id)
+        folderDao.delete(folder)
+    }
+
     companion object {
         @Volatile
         private var instance: NoteRepository? = null
 
         fun getInstance(context: Context): NoteRepository =
             instance ?: synchronized(this) {
-                instance ?: NoteRepository(NoteDatabase.getInstance(context).noteDao()).also { instance = it }
+                instance ?: NoteDatabase.getInstance(context).let { db ->
+                    NoteRepository(db.noteDao(), db.folderDao())
+                }.also { instance = it }
             }
     }
 }
