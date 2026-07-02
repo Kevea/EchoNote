@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileMove
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
@@ -51,6 +52,7 @@ import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -247,13 +249,23 @@ fun NoteListScreen(
             },
             floatingActionButton = {
                 if (!selectionMode) {
-                    ExtendedFloatingActionButton(
-                        onClick = onRecordClick,
-                        icon = { Icon(Icons.Filled.Mic, contentDescription = null) },
-                        text = { Text("Aufnehmen") },
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary,
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        SmallFloatingActionButton(
+                            onClick = { viewModel.createBlankNote { id -> onNoteClick(id) } },
+                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        ) {
+                            Icon(Icons.Filled.Edit, contentDescription = stringResource(R.string.list_write_note))
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                        ExtendedFloatingActionButton(
+                            onClick = onRecordClick,
+                            icon = { Icon(Icons.Filled.Mic, contentDescription = null) },
+                            text = { Text("Aufnehmen") },
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary,
+                        )
+                    }
                 }
             },
         ) { padding ->

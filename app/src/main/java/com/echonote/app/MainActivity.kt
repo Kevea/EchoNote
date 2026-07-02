@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavType
@@ -31,7 +32,9 @@ import com.echonote.app.ui.screens.NoteListScreen
 import com.echonote.app.ui.screens.RecordScreen
 import com.echonote.app.ui.screens.SettingsScreen
 import com.echonote.app.ui.theme.EchoNoteTheme
+import com.echonote.app.ui.theme.NoteTagColors
 import com.echonote.app.util.BackgroundStyle
+import com.echonote.app.util.ThemeSettings
 
 private const val ROUTE_LIST = "list"
 private const val ROUTE_RECORD = "record"
@@ -51,19 +54,13 @@ class MainActivity : ComponentActivity() {
             EchoNoteTheme {
                 val app = LocalContext.current.applicationContext as EchoNoteApp
                 val settings by app.themePreferences.settings.collectAsState()
-                if (settings.backgroundStyle == BackgroundStyle.GRADIENT) {
+                val brush = appBackgroundBrush(settings)
+                if (brush != null) {
                     Surface(
                         modifier = Modifier
                             .fillMaxSize()
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(
-                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                                        MaterialTheme.colorScheme.background,
-                                    )
-                                )
-                            ),
-                        color = androidx.compose.ui.graphics.Color.Transparent,
+                            .background(brush),
+                        color = Color.Transparent,
                     ) {
                         EchoNoteNavHost(pendingNoteId, pendingStartRecording)
                     }
@@ -91,6 +88,26 @@ class MainActivity : ComponentActivity() {
     companion object {
         const val EXTRA_OPEN_NOTE_ID = "open_note_id"
         const val EXTRA_START_RECORDING = "start_recording"
+    }
+}
+
+@Composable
+private fun appBackgroundBrush(settings: ThemeSettings): Brush? {
+    val base = NoteTagColors.getOrElse(settings.baseColorIndex) { NoteTagColors.first() }
+    val accent = NoteTagColors.getOrElse(settings.accentColorIndex) { NoteTagColors.first() }
+    val background = MaterialTheme.colorScheme.background
+    return when (settings.backgroundStyle) {
+        BackgroundStyle.SOLID -> null
+        BackgroundStyle.GRADIENT -> Brush.verticalGradient(
+            listOf(base.copy(alpha = 0.16f), background),
+        )
+        BackgroundStyle.RADIAL -> Brush.radialGradient(
+            colors = listOf(base.copy(alpha = 0.35f), background),
+            radius = 1400f,
+        )
+        BackgroundStyle.MESH -> Brush.linearGradient(
+            colors = listOf(base.copy(alpha = 0.22f), accent.copy(alpha = 0.12f), background),
+        )
     }
 }
 

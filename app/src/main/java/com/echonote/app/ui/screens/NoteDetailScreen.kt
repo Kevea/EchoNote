@@ -421,6 +421,17 @@ fun NoteDetailScreen(
                                     }
                                 },
                             )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.detail_export_markdown)) },
+                                onClick = {
+                                    showShareMenu = false
+                                    val current = note
+                                    if (current != null) {
+                                        val uri = NoteExporter.exportAsMarkdown(context, current.copy(title = title, content = content))
+                                        shareFile(context, uri, "text/markdown")
+                                    }
+                                },
+                            )
                         }
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {

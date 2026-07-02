@@ -104,6 +104,13 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun createBlankNote(onCreated: (Long) -> Unit) {
+        viewModelScope.launch {
+            val id = repository.save(Note(title = "", content = ""))
+            onCreated(id)
+        }
+    }
+
     fun togglePin(note: Note) {
         viewModelScope.launch { repository.update(note.copy(isPinned = !note.isPinned)) }
     }

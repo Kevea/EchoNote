@@ -9,9 +9,13 @@
     <string name="empty_title">Noch keine Notizen</string>
     <string name="empty_subtitle">Tippe auf das Mikrofon und sprich los –\nEchoNote transkribiert live für dich.</string>
     <string name="new_note_fallback_title">Neue Notiz</string>
+    <string name="list_write_note">Notiz schreiben</string>
 
     <string name="record_tap_to_start">Tippen zum Aufnehmen</string>
     <string name="record_listening">Ich höre zu…</string>
+    <string name="record_paused">Pausiert</string>
+    <string name="record_pause">Pause</string>
+    <string name="record_resume">Fortsetzen</string>
     <string name="record_cancel">Verwerfen</string>
     <string name="record_save">Speichern</string>
     <string name="record_permission_rationale">EchoNote benötigt Mikrofonzugriff, um Sprachnotizen aufzunehmen und zu transkribieren.</string>
@@ -50,4 +54,5 @@
 
     <string name="detail_export_text">Als Text exportieren (.txt)</string>
     <string name="detail_export_pdf">Als PDF exportieren</string>
+    <string name="detail_export_markdown">Als Markdown exportieren (.md)</string>
 </resources>

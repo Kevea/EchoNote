@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 
 data class CaptureUiState(
     val isRecording: Boolean = false,
+    val isPaused: Boolean = false,
     val elapsedMs: Long = 0L,
     val amplitude: Int = 0,
     val amplitudeHistory: List<Int> = emptyList(),
@@ -49,27 +50,59 @@ class VoiceCaptureController(private val context: Context) {
     val state: StateFlow<CaptureUiState> = _state.asStateFlow()
 
     private var recognizer: SpeechRecognizer? = null
-    private var startElapsedRealtime = 0L
+    private var segmentStartRealtime = 0L
+    private var accumulatedElapsedMs = 0L
     private var tickerJob: Job? = null
     private var wantsListening = false
 
     fun start(scope: CoroutineScope) {
-        startElapsedRealtime = System.currentTimeMillis()
+        accumulatedElapsedMs = 0L
+        segmentStartRealtime = System.currentTimeMillis()
         _state.value = CaptureUiState(isRecording = true)
 
         startRecognizer()
+        startTicker(scope)
+    }
 
+    private fun startTicker(scope: CoroutineScope) {
+        tickerJob?.cancel()
         tickerJob = scope.launch {
-            while (isActive && _state.value.isRecording) {
+            while (isActive && _state.value.isRecording && !_state.value.isPaused) {
                 _state.update {
                     it.copy(
-                        elapsedMs = System.currentTimeMillis() - startElapsedRealtime,
+                        elapsedMs = accumulatedElapsedMs + (System.currentTimeMillis() - segmentStartRealtime),
                         amplitudeHistory = it.amplitudeHistory + it.amplitude,
                     )
                 }
                 delay(100)
             }
         }
+    }
+
+    fun pause() {
+        val current = _state.value
+        if (!current.isRecording || current.isPaused) return
+        wantsListening = false
+        tickerJob?.cancel()
+        tickerJob = null
+        accumulatedElapsedMs += System.currentTimeMillis() - segmentStartRealtime
+        try {
+            recognizer?.stopListening()
+            recognizer?.destroy()
+        } catch (_: Exception) {
+            // already destroyed
+        }
+        recognizer = null
+        _state.update { it.copy(isPaused = true, amplitude = 0) }
+    }
+
+    fun resume(scope: CoroutineScope) {
+        val current = _state.value
+        if (!current.isRecording || !current.isPaused) return
+        segmentStartRealtime = System.currentTimeMillis()
+        _state.update { it.copy(isPaused = false) }
+        startRecognizer()
+        startTicker(scope)
     }
 
     private fun startRecognizer() {

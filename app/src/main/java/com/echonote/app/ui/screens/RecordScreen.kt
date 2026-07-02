@@ -25,6 +25,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -135,7 +138,11 @@ fun RecordScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = stringResource(R.string.record_listening),
+                    text = if (captureState.isPaused) {
+                        stringResource(R.string.record_paused)
+                    } else {
+                        stringResource(R.string.record_listening)
+                    },
                     style = MaterialTheme.typography.labelLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -163,6 +170,21 @@ fun RecordScreen(
                         .fillMaxWidth()
                         .height(40.dp),
                 )
+                Spacer(modifier = Modifier.height(20.dp))
+                FilledTonalIconButton(
+                    onClick = {
+                        if (captureState.isPaused) viewModel.resumeRecording() else viewModel.pauseRecording()
+                    },
+                ) {
+                    Icon(
+                        imageVector = if (captureState.isPaused) Icons.Filled.PlayArrow else Icons.Filled.Pause,
+                        contentDescription = if (captureState.isPaused) {
+                            stringResource(R.string.record_resume)
+                        } else {
+                            stringResource(R.string.record_pause)
+                        },
+                    )
+                }
             } else {
                 RecordIdleHint(permissionDenied = permissionDenied)
             }

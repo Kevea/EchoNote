@@ -25,6 +25,17 @@ object NoteExporter {
         return uriFor(context, file)
     }
 
+    fun exportAsMarkdown(context: Context, note: Note): Uri {
+        val title = note.title.ifBlank { "Notiz" }
+        val file = exportFile(context, title, "md")
+        file.writeText(buildString {
+            appendLine("# $title")
+            appendLine()
+            append(note.content)
+        })
+        return uriFor(context, file)
+    }
+
     fun exportAsPdf(context: Context, note: Note): Uri {
         val title = note.title.ifBlank { "Notiz" }
         val file = exportFile(context, title, "pdf")

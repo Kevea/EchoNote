@@ -97,6 +97,35 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+            Text("Grundfarbe (Hintergrund)", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                NoteTagColors.forEachIndexed { index, color ->
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(color, CircleShape)
+                            .then(
+                                if (index == settings.baseColorIndex) {
+                                    Modifier.border(3.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .clickable { viewModel.setBaseColor(index) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (index == settings.baseColorIndex) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
             Text("Darstellung", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
@@ -189,4 +218,6 @@ private fun darkModeLabel(option: DarkModeOption): String = when (option) {
 private fun backgroundStyleLabel(option: BackgroundStyle): String = when (option) {
     BackgroundStyle.SOLID -> "Einfarbig"
     BackgroundStyle.GRADIENT -> "Farbverlauf"
+    BackgroundStyle.RADIAL -> "Radialer Verlauf"
+    BackgroundStyle.MESH -> "Mesh (mehrfarbig)"
 }
