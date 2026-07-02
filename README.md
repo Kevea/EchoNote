@@ -12,6 +12,8 @@ Sprachnotizen-App für Android mit Live-Transkription: aufnehmen, während du sp
 - Ordner und Notizen jeweils per Drag & Drop frei sortieren
 - Mehrfachauswahl: Notizen anheften, verschieben oder löschen
 - Tags, Anheften, Suche (auch offline im Transkript), Markdown-Vorschau im Editor
+  (öffnet standardmäßig in der Vorschau, mit optionalem Umschalter für den
+  Bearbeitungshintergrund)
 - Erinnerungen auf Notizen mit Datum und Uhrzeit
 - Notizen als Text-, Markdown- oder PDF-Datei exportieren und teilen
 - Umfangreiche Design-Anpassung: eigene Akzent- und Grundfarbe, mehrere Hintergrund-Muster

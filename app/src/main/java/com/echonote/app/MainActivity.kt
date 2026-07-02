@@ -8,6 +8,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -19,7 +20,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavType
@@ -55,17 +55,19 @@ class MainActivity : ComponentActivity() {
                 val app = LocalContext.current.applicationContext as EchoNoteApp
                 val settings by app.themePreferences.settings.collectAsState()
                 val brush = appBackgroundBrush(settings)
-                if (brush != null) {
-                    Surface(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(brush),
-                        color = Color.Transparent,
-                    ) {
-                        EchoNoteNavHost(pendingNoteId, pendingStartRecording)
-                    }
-                } else {
-                    Surface(modifier = Modifier.fillMaxSize()) {
+                // Surface keeps its default (opaque, theme-correct) color as the base fill.
+                // The gradient/radial/mesh brush is only ever semi-transparent, so painting it
+                // straight onto a Color.Transparent Surface let the native window background
+                // (always light, since it's set by the Android XML theme, independent of the
+                // app's runtime dark/light choice) show through the un-tinted portions - washing
+                // out dark mode and leaving light-on-light or dark-text-on-dark-background spots.
+                // Layering it on top of the real background in a Box keeps the tint but
+                // guarantees the base underneath always matches colorScheme.background.
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        if (brush != null) {
+                            Box(modifier = Modifier.fillMaxSize().background(brush))
+                        }
                         EchoNoteNavHost(pendingNoteId, pendingStartRecording)
                     }
                 }
