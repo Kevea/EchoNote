@@ -5,14 +5,17 @@ Sprachnotizen-App für Android mit Live-Transkription: aufnehmen, während du sp
 ## Funktionen
 
 - Sprachaufnahme mit Live-Transkription (Android SpeechRecognizer), ein Tap genügt
+- Aufnahme lässt sich pausieren und fortsetzen, ohne dass Text verloren geht
+- Notizen auch ohne Aufnahme direkt als Text schreiben
 - Homescreen-Widget für die Aufnahme mit einem Tap
 - Notizen in Ordnern organisieren, mit eigener Farbe pro Ordner
+- Ordner und Notizen jeweils per Drag & Drop frei sortieren
 - Mehrfachauswahl: Notizen anheften, verschieben oder löschen
-- Notizen per Drag & Drop bzw. manuellem Reorder sortieren
 - Tags, Anheften, Suche (auch offline im Transkript), Markdown-Vorschau im Editor
 - Erinnerungen auf Notizen mit Datum und Uhrzeit
-- Notizen als Text- oder PDF-Datei exportieren und teilen
-- Umfangreiche Design-Anpassung: Akzentfarbe, Kartenstil, Hintergrund, Hell-/Dunkel-/System-Design
+- Notizen als Text-, Markdown- oder PDF-Datei exportieren und teilen
+- Umfangreiche Design-Anpassung: eigene Akzent- und Grundfarbe, mehrere Hintergrund-Muster
+  (Verlauf, radial, mehrfarbig), Kartenstil, Hell-/Dunkel-/System-Design
 
 ## Build
 
