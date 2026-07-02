@@ -319,6 +319,7 @@ fun NoteDetailScreen(
     val accent = NoteTagColors.getOrElse(note?.colorTag ?: 0) { NoteTagColors.first() }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {},

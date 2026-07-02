@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +53,7 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsState()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Einstellungen") },
@@ -66,6 +68,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
             Text("Akzentfarbe", style = MaterialTheme.typography.titleMedium)
@@ -205,6 +208,7 @@ fun SettingsScreen(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
