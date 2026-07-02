@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
@@ -27,7 +29,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileMove
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
@@ -37,8 +38,6 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -50,7 +49,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -70,9 +68,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -117,10 +115,13 @@ fun NoteListScreen(
     var editingFolder by remember { mutableStateOf<Folder?>(null) }
     var showMoveDialog by remember { mutableStateOf(false) }
 
-    // drag-and-drop state
+    // drag-to-reorder state
     var draggingNoteId by remember { mutableStateOf<Long?>(null) }
     var dragPosition by remember { mutableStateOf<Offset?>(null) }
-    val dropZoneBounds = remember { mutableStateOf<Map<Long?, Rect>>(emptyMap()) }
+    val noteCardBounds = remember { mutableStateOf<Map<Long, Rect>>(emptyMap()) }
+    val dragTargetId = dragPosition?.let { pos ->
+        noteCardBounds.value.entries.find { it.key != draggingNoteId && it.value.contains(pos) }?.key
+    }
 
     if (showNewFolderDialog || editingFolder != null) {
         FolderEditDialog(
@@ -157,7 +158,7 @@ fun NoteListScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(modifier = Modifier.width(IntrinsicSize.Min)) {
                 DrawerContent(
                     folderFilter = folderFilter,
                     folders = folders,
@@ -277,40 +278,46 @@ fun NoteListScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             staggeredItems(notes, key = { it.id }) { note ->
-                                NoteCard(
-                                    note = note,
-                                    folder = folders.find { it.id == note.folderId },
-                                    isSelected = note.id in selectedIds,
-                                    selectionMode = selectionMode,
-                                    onClick = {
-                                        if (selectionMode) viewModel.toggleSelected(note.id) else onNoteClick(note.id)
-                                    },
-                                    onLongPress = { viewModel.startSelection(note.id) },
-                                    onDragStart = { draggingNoteId = note.id },
-                                    onDrag = { pos -> dragPosition = pos },
-                                    onDragEnd = { pos ->
-                                        val target = dropZoneBounds.value.entries.find { it.value.contains(pos) }
-                                        if (target != null) viewModel.moveNote(note, target.key)
-                                        draggingNoteId = null
-                                        dragPosition = null
-                                    },
-                                    onDragCancel = {
-                                        draggingNoteId = null
-                                        dragPosition = null
-                                    },
-                                )
+                                Box(
+                                    modifier = Modifier.onGloballyPositioned { coords ->
+                                        noteCardBounds.value = noteCardBounds.value + (note.id to coords.boundsInRoot())
+                                    }
+                                ) {
+                                    NoteCard(
+                                        note = note,
+                                        folder = folders.find { it.id == note.folderId },
+                                        isSelected = note.id in selectedIds,
+                                        selectionMode = selectionMode,
+                                        isDropTarget = note.id == dragTargetId,
+                                        onClick = {
+                                            if (selectionMode) viewModel.toggleSelected(note.id) else onNoteClick(note.id)
+                                        },
+                                        onLongPress = { viewModel.startSelection(note.id) },
+                                        onDragStart = { draggingNoteId = note.id },
+                                        onDrag = { pos -> dragPosition = pos },
+                                        onDragEnd = { pos ->
+                                            val targetId = noteCardBounds.value.entries
+                                                .find { it.key != note.id && it.value.contains(pos) }
+                                                ?.key
+                                            val targetIndex = targetId?.let { id -> notes.indexOfFirst { it.id == id } }
+                                            if (targetIndex != null && targetIndex >= 0) {
+                                                val reordered = notes.toMutableList()
+                                                reordered.remove(note)
+                                                reordered.add(targetIndex, note)
+                                                viewModel.reorderNotes(reordered)
+                                            }
+                                            draggingNoteId = null
+                                            dragPosition = null
+                                        },
+                                        onDragCancel = {
+                                            draggingNoteId = null
+                                            dragPosition = null
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
-                }
-
-                if (draggingNoteId != null) {
-                    DropZoneOverlay(
-                        folders = folders,
-                        activeDropId = dragPosition?.let { pos -> dropZoneBounds.value.entries.find { it.value.contains(pos) }?.key },
-                        onBoundsMeasured = { map -> dropZoneBounds.value = map },
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
                 }
             }
         }
@@ -332,46 +339,52 @@ private fun DrawerContent(
     onNewFolder: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    Column(modifier = Modifier.padding(vertical = 12.dp)) {
+    // NavigationDrawerItem always fills the width it's given, so a drawer built from it can
+    // only ever be as narrow as a fixed dp guess. This uses a plain (non-fillMaxWidth) row
+    // instead, so IntrinsicSize.Min below can size the drawer to its actual widest label.
+    Column(
+        modifier = Modifier
+            .width(IntrinsicSize.Min)
+            .widthIn(max = 260.dp)
+            .padding(vertical = 12.dp),
+    ) {
         Text(
             text = "EchoNote",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
-        NavigationDrawerItem(
-            label = { Text("Meine Notizen") },
-            icon = { Icon(Icons.Filled.NoteAlt, contentDescription = null) },
+        DrawerRow(
+            label = "Meine Notizen",
+            icon = { Icon(Icons.Filled.NoteAlt, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = folderFilter is FolderFilter.Unfiled,
             onClick = { onSelectFilter(FolderFilter.Unfiled) },
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
-        NavigationDrawerItem(
-            label = { Text("Alle Notizen") },
-            icon = { Icon(Icons.Filled.FolderOff, contentDescription = null) },
+        DrawerRow(
+            label = "Alle Notizen",
+            icon = { Icon(Icons.Filled.FolderOff, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = folderFilter is FolderFilter.All,
             onClick = { onSelectFilter(FolderFilter.All) },
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp))
         Text(
             text = "ORDNER",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
         )
         folders.forEach { folder ->
           key(folder.id) {
             val color = NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() }
             var menuExpanded by remember { mutableStateOf(false) }
-            NavigationDrawerItem(
-                label = { Text(folder.name) },
-                icon = {
-                    Box(modifier = Modifier.size(12.dp).background(color, CircleShape))
-                },
-                badge = {
+            DrawerRow(
+                label = folder.name,
+                icon = { Box(modifier = Modifier.size(12.dp).background(color, CircleShape)) },
+                selected = folderFilter is FolderFilter.Specific && folderFilter.folderId == folder.id,
+                onClick = { onSelectFilter(FolderFilter.Specific(folder.id)) },
+                trailing = {
                     Box {
-                        IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(18.dp))
+                        IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                             DropdownMenuItem(
@@ -381,27 +394,49 @@ private fun DrawerContent(
                         }
                     }
                 },
-                selected = folderFilter is FolderFilter.Specific && folderFilter.folderId == folder.id,
-                onClick = { onSelectFilter(FolderFilter.Specific(folder.id)) },
-                modifier = Modifier.padding(horizontal = 12.dp),
             )
           }
         }
-        NavigationDrawerItem(
-            label = { Text("Neuer Ordner") },
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+        DrawerRow(
+            label = "Neuer Ordner",
+            icon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = onNewFolder,
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        NavigationDrawerItem(
-            label = { Text("Einstellungen") },
-            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp))
+        DrawerRow(
+            label = "Einstellungen",
+            icon = { Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = onSettings,
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
+    }
+}
+
+@Composable
+private fun DrawerRow(
+    label: String,
+    icon: @Composable () -> Unit,
+    selected: Boolean,
+    onClick: () -> Unit,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        icon()
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        if (trailing != null) {
+            Spacer(modifier = Modifier.width(10.dp))
+            trailing()
+        }
     }
 }
 
@@ -499,76 +534,6 @@ private fun MoveToFolderDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
-}
-
-@Composable
-private fun DropZoneOverlay(
-    folders: List<Folder>,
-    activeDropId: Long?,
-    onBoundsMeasured: (Map<Long?, Rect>) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val bounds = remember { mutableStateOf(mutableMapOf<Long?, Rect>()) }
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-    ) {
-        LazyRow(
-            contentPadding = PaddingValues(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item {
-                DropTarget(
-                    label = stringResource(R.string.folder_none),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    active = activeDropId == null,
-                    onBoundsChanged = { rect ->
-                        bounds.value = (bounds.value + (null to rect)).toMutableMap()
-                        onBoundsMeasured(bounds.value)
-                    },
-                )
-            }
-            items(folders) { folder ->
-                DropTarget(
-                    label = folder.name,
-                    color = NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() },
-                    active = activeDropId == folder.id,
-                    onBoundsChanged = { rect ->
-                        bounds.value = (bounds.value + (folder.id to rect)).toMutableMap()
-                        onBoundsMeasured(bounds.value)
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DropTarget(
-    label: String,
-    color: Color,
-    active: Boolean,
-    onBoundsChanged: (Rect) -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .onGloballyPositioned { coords -> onBoundsChanged(coords.boundsInRoot()) }
-            .background(
-                if (active) color.copy(alpha = 0.25f) else color.copy(alpha = 0.1f),
-                RoundedCornerShape(50),
-            )
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Folder, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(label, color = color, style = MaterialTheme.typography.labelLarge)
-        }
-    }
 }
 
 @Composable

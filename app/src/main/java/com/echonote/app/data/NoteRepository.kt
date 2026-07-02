@@ -46,6 +46,10 @@ class NoteRepository(
         folderDao.delete(folder)
     }
 
+    suspend fun getNotesWithReminders(): List<Note> = withContext(Dispatchers.IO) {
+        dao.getNotesWithReminders()
+    }
+
     companion object {
         @Volatile
         private var instance: NoteRepository? = null

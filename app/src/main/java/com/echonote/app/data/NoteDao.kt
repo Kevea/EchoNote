@@ -11,14 +11,14 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface NoteDao {
 
-    @Query("SELECT * FROM notes ORDER BY isPinned DESC, updatedAt DESC")
+    @Query("SELECT * FROM notes ORDER BY isPinned DESC, sortOrder DESC")
     fun observeAll(): Flow<List<Note>>
 
     @Query(
         """
         SELECT * FROM notes
         WHERE title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%'
-        ORDER BY isPinned DESC, updatedAt DESC
+        ORDER BY isPinned DESC, sortOrder DESC
         """
     )
     fun search(query: String): Flow<List<Note>>
@@ -40,4 +40,7 @@ interface NoteDao {
 
     @Query("UPDATE notes SET folderId = NULL WHERE folderId = :folderId")
     suspend fun clearFolder(folderId: Long)
+
+    @Query("SELECT * FROM notes WHERE reminderAt IS NOT NULL")
+    suspend fun getNotesWithReminders(): List<Note>
 }

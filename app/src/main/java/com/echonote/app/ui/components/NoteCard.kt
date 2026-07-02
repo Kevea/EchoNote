@@ -30,6 +30,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,14 +41,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.echonote.app.EchoNoteApp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
 import com.echonote.app.ui.theme.NoteTagColors
+import com.echonote.app.util.formatDateTime
 import com.echonote.app.util.formatDuration
-import com.echonote.app.util.formatRelativeTime
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -59,23 +62,42 @@ fun NoteCard(
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
+    isDropTarget: Boolean = false,
     onDragStart: () -> Unit = {},
     onDrag: (Offset) -> Unit = {},
     onDragEnd: (Offset) -> Unit = {},
     onDragCancel: () -> Unit = {},
 ) {
-    val accent = NoteTagColors.getOrElse(note.colorTag) { NoteTagColors.first() }
-    val folderColor = folder?.let { NoteTagColors.getOrElse(it.colorIndex) { NoteTagColors.first() } }
+    val app = LocalContext.current.applicationContext as EchoNoteApp
+    val themeSettings by app.themePreferences.settings.collectAsState()
+    val accent = if (themeSettings.colorfulCards) {
+        NoteTagColors.getOrElse(note.colorTag) { NoteTagColors.first() }
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val folderColor = folder?.let {
+        if (themeSettings.colorfulCards) {
+            NoteTagColors.getOrElse(it.colorIndex) { NoteTagColors.first() }
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant
+        }
+    }
+    val cornerRadius = if (themeSettings.roundedCards) 20.dp else 6.dp
+    val cardShape = RoundedCornerShape(cornerRadius)
     val plainSnippet = remember(note.content) { note.content.stripMarkdown() }
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                if (isSelected) Modifier.border(2.dp, accent, RoundedCornerShape(20.dp)) else Modifier
+                if (isSelected || isDropTarget) {
+                    Modifier.border(2.dp, MaterialTheme.colorScheme.primary, cardShape)
+                } else {
+                    Modifier
+                }
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongPress),
-        shape = RoundedCornerShape(20.dp),
+        shape = cardShape,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp),
     ) {
@@ -85,7 +107,7 @@ fun NoteCard(
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(5.dp)
-                        .background(accent, RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp))
+                        .background(accent, RoundedCornerShape(topStart = cornerRadius, topEnd = cornerRadius))
                 )
                 Column(modifier = Modifier.padding(16.dp)) {
                     Row(
@@ -187,7 +209,7 @@ fun NoteCard(
                             Spacer(modifier = Modifier.width(10.dp))
                         }
                         Text(
-                            text = formatRelativeTime(note.updatedAt),
+                            text = formatDateTime(note.updatedAt),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

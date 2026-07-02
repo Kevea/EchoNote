@@ -87,6 +87,14 @@ fun RecordScreen(
         }
     }
 
+    // One-tap recording: if permission is already granted, start immediately instead of
+    // requiring a second tap on the mic button once this screen is on screen.
+    LaunchedEffect(Unit) {
+        if (hasPermission && !captureState.isRecording) {
+            viewModel.startRecording()
+        }
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
