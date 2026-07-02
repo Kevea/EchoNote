@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
@@ -47,7 +49,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
-import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -67,6 +68,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.layout.boundsInRoot
@@ -156,7 +158,7 @@ fun NoteListScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(modifier = Modifier.width(280.dp)) {
+            ModalDrawerSheet(modifier = Modifier.width(IntrinsicSize.Min)) {
                 DrawerContent(
                     folderFilter = folderFilter,
                     folders = folders,
@@ -337,46 +339,52 @@ private fun DrawerContent(
     onNewFolder: () -> Unit,
     onSettings: () -> Unit,
 ) {
-    Column(modifier = Modifier.padding(vertical = 12.dp)) {
+    // NavigationDrawerItem always fills the width it's given, so a drawer built from it can
+    // only ever be as narrow as a fixed dp guess. This uses a plain (non-fillMaxWidth) row
+    // instead, so IntrinsicSize.Min below can size the drawer to its actual widest label.
+    Column(
+        modifier = Modifier
+            .width(IntrinsicSize.Min)
+            .widthIn(max = 260.dp)
+            .padding(vertical = 12.dp),
+    ) {
         Text(
             text = "EchoNote",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
-        NavigationDrawerItem(
-            label = { Text("Meine Notizen") },
-            icon = { Icon(Icons.Filled.NoteAlt, contentDescription = null) },
+        DrawerRow(
+            label = "Meine Notizen",
+            icon = { Icon(Icons.Filled.NoteAlt, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = folderFilter is FolderFilter.Unfiled,
             onClick = { onSelectFilter(FolderFilter.Unfiled) },
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
-        NavigationDrawerItem(
-            label = { Text("Alle Notizen") },
-            icon = { Icon(Icons.Filled.FolderOff, contentDescription = null) },
+        DrawerRow(
+            label = "Alle Notizen",
+            icon = { Icon(Icons.Filled.FolderOff, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = folderFilter is FolderFilter.All,
             onClick = { onSelectFilter(FolderFilter.All) },
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp))
         Text(
             text = "ORDNER",
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
         )
         folders.forEach { folder ->
           key(folder.id) {
             val color = NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() }
             var menuExpanded by remember { mutableStateOf(false) }
-            NavigationDrawerItem(
-                label = { Text(folder.name) },
-                icon = {
-                    Box(modifier = Modifier.size(12.dp).background(color, CircleShape))
-                },
-                badge = {
+            DrawerRow(
+                label = folder.name,
+                icon = { Box(modifier = Modifier.size(12.dp).background(color, CircleShape)) },
+                selected = folderFilter is FolderFilter.Specific && folderFilter.folderId == folder.id,
+                onClick = { onSelectFilter(FolderFilter.Specific(folder.id)) },
+                trailing = {
                     Box {
-                        IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(24.dp)) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(18.dp))
+                        IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(20.dp)) {
+                            Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(16.dp))
                         }
                         DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                             DropdownMenuItem(
@@ -386,27 +394,49 @@ private fun DrawerContent(
                         }
                     }
                 },
-                selected = folderFilter is FolderFilter.Specific && folderFilter.folderId == folder.id,
-                onClick = { onSelectFilter(FolderFilter.Specific(folder.id)) },
-                modifier = Modifier.padding(horizontal = 12.dp),
             )
           }
         }
-        NavigationDrawerItem(
-            label = { Text("Neuer Ordner") },
-            icon = { Icon(Icons.Filled.Add, contentDescription = null) },
+        DrawerRow(
+            label = "Neuer Ordner",
+            icon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = onNewFolder,
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        NavigationDrawerItem(
-            label = { Text("Einstellungen") },
-            icon = { Icon(Icons.Filled.Settings, contentDescription = null) },
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp))
+        DrawerRow(
+            label = "Einstellungen",
+            icon = { Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = onSettings,
-            modifier = Modifier.padding(horizontal = 12.dp),
         )
+    }
+}
+
+@Composable
+private fun DrawerRow(
+    label: String,
+    icon: @Composable () -> Unit,
+    selected: Boolean,
+    onClick: () -> Unit,
+    trailing: (@Composable () -> Unit)? = null,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .padding(horizontal = 8.dp, vertical = 2.dp)
+            .clip(RoundedCornerShape(50))
+            .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+    ) {
+        icon()
+        Spacer(modifier = Modifier.width(12.dp))
+        Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        if (trailing != null) {
+            Spacer(modifier = Modifier.width(10.dp))
+            trailing()
+        }
     }
 }
 

@@ -6,10 +6,16 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -21,6 +27,7 @@ import com.echonote.app.ui.screens.NoteListScreen
 import com.echonote.app.ui.screens.RecordScreen
 import com.echonote.app.ui.screens.SettingsScreen
 import com.echonote.app.ui.theme.EchoNoteTheme
+import com.echonote.app.util.BackgroundStyle
 
 private const val ROUTE_LIST = "list"
 private const val ROUTE_RECORD = "record"
@@ -34,8 +41,28 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             EchoNoteTheme {
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    EchoNoteNavHost()
+                val app = LocalContext.current.applicationContext as EchoNoteApp
+                val settings by app.themePreferences.settings.collectAsState()
+                if (settings.backgroundStyle == BackgroundStyle.GRADIENT) {
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(
+                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                                        MaterialTheme.colorScheme.background,
+                                    )
+                                )
+                            ),
+                        color = androidx.compose.ui.graphics.Color.Transparent,
+                    ) {
+                        EchoNoteNavHost()
+                    }
+                } else {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        EchoNoteNavHost()
+                    }
                 }
             }
         }
