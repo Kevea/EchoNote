@@ -46,8 +46,8 @@ import androidx.compose.ui.unit.dp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
 import com.echonote.app.ui.theme.NoteTagColors
+import com.echonote.app.util.formatDateTime
 import com.echonote.app.util.formatDuration
-import com.echonote.app.util.formatRelativeTime
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -59,6 +59,7 @@ fun NoteCard(
     onClick: () -> Unit,
     onLongPress: () -> Unit,
     modifier: Modifier = Modifier,
+    isDropTarget: Boolean = false,
     onDragStart: () -> Unit = {},
     onDrag: (Offset) -> Unit = {},
     onDragEnd: (Offset) -> Unit = {},
@@ -72,7 +73,7 @@ fun NoteCard(
         modifier = modifier
             .fillMaxWidth()
             .then(
-                if (isSelected) Modifier.border(2.dp, accent, RoundedCornerShape(20.dp)) else Modifier
+                if (isSelected || isDropTarget) Modifier.border(2.dp, accent, RoundedCornerShape(20.dp)) else Modifier
             )
             .combinedClickable(onClick = onClick, onLongClick = onLongPress),
         shape = RoundedCornerShape(20.dp),
@@ -187,7 +188,7 @@ fun NoteCard(
                             Spacer(modifier = Modifier.width(10.dp))
                         }
                         Text(
-                            text = formatRelativeTime(note.updatedAt),
+                            text = formatDateTime(note.updatedAt),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )

@@ -15,6 +15,7 @@ data class Note(
     val folderId: Long? = null,
     val isPinned: Boolean = false,
     val colorTag: Int = 0,
+    val sortOrder: Long = System.currentTimeMillis(),
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
 ) {

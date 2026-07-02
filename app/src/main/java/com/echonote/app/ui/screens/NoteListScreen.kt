@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DriveFileMove
-import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.FolderOff
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Mic
@@ -37,8 +36,6 @@ import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -72,7 +69,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -117,10 +113,13 @@ fun NoteListScreen(
     var editingFolder by remember { mutableStateOf<Folder?>(null) }
     var showMoveDialog by remember { mutableStateOf(false) }
 
-    // drag-and-drop state
+    // drag-to-reorder state
     var draggingNoteId by remember { mutableStateOf<Long?>(null) }
     var dragPosition by remember { mutableStateOf<Offset?>(null) }
-    val dropZoneBounds = remember { mutableStateOf<Map<Long?, Rect>>(emptyMap()) }
+    val noteCardBounds = remember { mutableStateOf<Map<Long, Rect>>(emptyMap()) }
+    val dragTargetId = dragPosition?.let { pos ->
+        noteCardBounds.value.entries.find { it.key != draggingNoteId && it.value.contains(pos) }?.key
+    }
 
     if (showNewFolderDialog || editingFolder != null) {
         FolderEditDialog(
@@ -157,7 +156,7 @@ fun NoteListScreen(
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet {
+            ModalDrawerSheet(modifier = Modifier.width(280.dp)) {
                 DrawerContent(
                     folderFilter = folderFilter,
                     folders = folders,
@@ -277,40 +276,46 @@ fun NoteListScreen(
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                         ) {
                             staggeredItems(notes, key = { it.id }) { note ->
-                                NoteCard(
-                                    note = note,
-                                    folder = folders.find { it.id == note.folderId },
-                                    isSelected = note.id in selectedIds,
-                                    selectionMode = selectionMode,
-                                    onClick = {
-                                        if (selectionMode) viewModel.toggleSelected(note.id) else onNoteClick(note.id)
-                                    },
-                                    onLongPress = { viewModel.startSelection(note.id) },
-                                    onDragStart = { draggingNoteId = note.id },
-                                    onDrag = { pos -> dragPosition = pos },
-                                    onDragEnd = { pos ->
-                                        val target = dropZoneBounds.value.entries.find { it.value.contains(pos) }
-                                        if (target != null) viewModel.moveNote(note, target.key)
-                                        draggingNoteId = null
-                                        dragPosition = null
-                                    },
-                                    onDragCancel = {
-                                        draggingNoteId = null
-                                        dragPosition = null
-                                    },
-                                )
+                                Box(
+                                    modifier = Modifier.onGloballyPositioned { coords ->
+                                        noteCardBounds.value = noteCardBounds.value + (note.id to coords.boundsInRoot())
+                                    }
+                                ) {
+                                    NoteCard(
+                                        note = note,
+                                        folder = folders.find { it.id == note.folderId },
+                                        isSelected = note.id in selectedIds,
+                                        selectionMode = selectionMode,
+                                        isDropTarget = note.id == dragTargetId,
+                                        onClick = {
+                                            if (selectionMode) viewModel.toggleSelected(note.id) else onNoteClick(note.id)
+                                        },
+                                        onLongPress = { viewModel.startSelection(note.id) },
+                                        onDragStart = { draggingNoteId = note.id },
+                                        onDrag = { pos -> dragPosition = pos },
+                                        onDragEnd = { pos ->
+                                            val targetId = noteCardBounds.value.entries
+                                                .find { it.key != note.id && it.value.contains(pos) }
+                                                ?.key
+                                            val targetIndex = targetId?.let { id -> notes.indexOfFirst { it.id == id } }
+                                            if (targetIndex != null && targetIndex >= 0) {
+                                                val reordered = notes.toMutableList()
+                                                reordered.remove(note)
+                                                reordered.add(targetIndex, note)
+                                                viewModel.reorderNotes(reordered)
+                                            }
+                                            draggingNoteId = null
+                                            dragPosition = null
+                                        },
+                                        onDragCancel = {
+                                            draggingNoteId = null
+                                            dragPosition = null
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
-                }
-
-                if (draggingNoteId != null) {
-                    DropZoneOverlay(
-                        folders = folders,
-                        activeDropId = dragPosition?.let { pos -> dropZoneBounds.value.entries.find { it.value.contains(pos) }?.key },
-                        onBoundsMeasured = { map -> dropZoneBounds.value = map },
-                        modifier = Modifier.align(Alignment.BottomCenter),
-                    )
                 }
             }
         }
@@ -499,76 +504,6 @@ private fun MoveToFolderDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.action_cancel)) }
         },
     )
-}
-
-@Composable
-private fun DropZoneOverlay(
-    folders: List<Folder>,
-    activeDropId: Long?,
-    onBoundsMeasured: (Map<Long?, Rect>) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val bounds = remember { mutableStateOf(mutableMapOf<Long?, Rect>()) }
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-    ) {
-        LazyRow(
-            contentPadding = PaddingValues(12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            item {
-                DropTarget(
-                    label = stringResource(R.string.folder_none),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    active = activeDropId == null,
-                    onBoundsChanged = { rect ->
-                        bounds.value = (bounds.value + (null to rect)).toMutableMap()
-                        onBoundsMeasured(bounds.value)
-                    },
-                )
-            }
-            items(folders) { folder ->
-                DropTarget(
-                    label = folder.name,
-                    color = NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() },
-                    active = activeDropId == folder.id,
-                    onBoundsChanged = { rect ->
-                        bounds.value = (bounds.value + (folder.id to rect)).toMutableMap()
-                        onBoundsMeasured(bounds.value)
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun DropTarget(
-    label: String,
-    color: Color,
-    active: Boolean,
-    onBoundsChanged: (Rect) -> Unit,
-) {
-    Box(
-        modifier = Modifier
-            .onGloballyPositioned { coords -> onBoundsChanged(coords.boundsInRoot()) }
-            .background(
-                if (active) color.copy(alpha = 0.25f) else color.copy(alpha = 0.1f),
-                RoundedCornerShape(50),
-            )
-            .padding(horizontal = 14.dp, vertical = 10.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Icon(Icons.Filled.Folder, contentDescription = null, tint = color, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(label, color = color, style = MaterialTheme.typography.labelLarge)
-        }
-    }
 }
 
 @Composable

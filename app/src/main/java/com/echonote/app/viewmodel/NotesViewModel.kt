@@ -128,6 +128,16 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.update(note.copy(folderId = folderId)) }
     }
 
+    fun reorderNotes(orderedNotes: List<Note>) {
+        val base = System.currentTimeMillis()
+        val changed = orderedNotes.mapIndexedNotNull { index, note ->
+            val newOrder = base - index
+            if (note.sortOrder == newOrder) null else note.copy(sortOrder = newOrder)
+        }
+        if (changed.isEmpty()) return
+        viewModelScope.launch { changed.forEach { repository.update(it) } }
+    }
+
     // --- Multi-select ---
 
     fun toggleSelected(id: Long) {

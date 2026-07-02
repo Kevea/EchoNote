@@ -61,7 +61,12 @@ class VoiceCaptureController(private val context: Context) {
 
         tickerJob = scope.launch {
             while (isActive && _state.value.isRecording) {
-                _state.update { it.copy(elapsedMs = System.currentTimeMillis() - startElapsedRealtime) }
+                _state.update {
+                    it.copy(
+                        elapsedMs = System.currentTimeMillis() - startElapsedRealtime,
+                        amplitudeHistory = it.amplitudeHistory + it.amplitude,
+                    )
+                }
                 delay(100)
             }
         }
@@ -79,8 +84,11 @@ class VoiceCaptureController(private val context: Context) {
             override fun onBeginningOfSpeech() = Unit
 
             override fun onRmsChanged(rmsdB: Float) {
+                // onRmsChanged can fire much more often than the 100ms ticker; only the
+                // ticker samples this into amplitudeHistory, so this update stays O(1)
+                // instead of copying a growing list on every callback.
                 val amp = ((rmsdB.coerceIn(0f, RMS_REFERENCE) / RMS_REFERENCE) * AMPLITUDE_SCALE).toInt()
-                _state.update { it.copy(amplitude = amp, amplitudeHistory = it.amplitudeHistory + amp) }
+                _state.update { it.copy(amplitude = amp) }
             }
 
             override fun onBufferReceived(buffer: ByteArray?) = Unit
