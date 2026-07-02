@@ -1,7 +1,12 @@
 package com.echonote.app.ui.screens
 
+import android.Manifest
 import android.app.Application
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
@@ -32,7 +38,10 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -45,7 +54,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -60,6 +72,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -67,8 +80,11 @@ import com.echonote.app.R
 import com.echonote.app.ui.components.MarkdownText
 import com.echonote.app.ui.components.Waveform
 import com.echonote.app.ui.theme.NoteTagColors
+import com.echonote.app.util.NoteExporter
+import com.echonote.app.util.formatDateTime
 import com.echonote.app.util.formatDuration
 import com.echonote.app.viewmodel.NoteDetailViewModel
+import java.util.Calendar
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -101,6 +117,24 @@ fun NoteDetailScreen(
     var showFolderDialog by remember { mutableStateOf(false) }
     var newFolderInput by remember { mutableStateOf("") }
     var tagInput by remember { mutableStateOf("") }
+    var showDatePicker by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
+    var pendingDateMillis by remember { mutableStateOf<Long?>(null) }
+    var showShareMenu by remember { mutableStateOf(false) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* if denied, the reminder still fires but shows no visible notification */ }
+
+    fun ensureNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val granted = ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS,
+            ) == PackageManager.PERMISSION_GRANTED
+            if (!granted) notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     LaunchedEffect(note?.id) {
         val current = note
@@ -224,6 +258,64 @@ fun NoteDetailScreen(
         )
     }
 
+    if (showDatePicker) {
+        val datePickerState = rememberDatePickerState(
+            initialSelectedDateMillis = note?.reminderAt ?: System.currentTimeMillis(),
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingDateMillis = datePickerState.selectedDateMillis
+                    showDatePicker = false
+                    showTimePicker = true
+                }) { Text(stringResource(R.string.action_done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+
+    if (showTimePicker) {
+        val initialCalendar = remember {
+            Calendar.getInstance().apply { note?.reminderAt?.let { timeInMillis = it } }
+        }
+        val timePickerState = rememberTimePickerState(
+            initialHour = initialCalendar.get(Calendar.HOUR_OF_DAY),
+            initialMinute = initialCalendar.get(Calendar.MINUTE),
+            is24Hour = true,
+        )
+        AlertDialog(
+            onDismissRequest = { showTimePicker = false },
+            title = { Text(stringResource(R.string.detail_reminder_pick_time)) },
+            text = { TimePicker(state = timePickerState) },
+            confirmButton = {
+                TextButton(onClick = {
+                    val calendar = Calendar.getInstance().apply {
+                        timeInMillis = pendingDateMillis ?: System.currentTimeMillis()
+                        set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                        set(Calendar.MINUTE, timePickerState.minute)
+                        set(Calendar.SECOND, 0)
+                        set(Calendar.MILLISECOND, 0)
+                    }
+                    ensureNotificationPermission()
+                    viewModel.setReminder(calendar.timeInMillis)
+                    showTimePicker = false
+                }) { Text(stringResource(R.string.action_done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTimePicker = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+
     val accent = NoteTagColors.getOrElse(note?.colorTag ?: 0) { NoteTagColors.first() }
 
     Scaffold(
@@ -241,6 +333,16 @@ fun NoteDetailScreen(
                             Icons.Filled.PushPin,
                             contentDescription = stringResource(R.string.detail_pin),
                             tint = if (note?.isPinned == true) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                    IconButton(onClick = {
+                        pendingDateMillis = null
+                        showDatePicker = true
+                    }) {
+                        Icon(
+                            Icons.Filled.Alarm,
+                            contentDescription = stringResource(R.string.detail_reminder),
+                            tint = if (note?.reminderAt != null) accent else MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Box {
@@ -280,15 +382,46 @@ fun NoteDetailScreen(
                     IconButton(onClick = { showFolderDialog = true }) {
                         Icon(Icons.Filled.Folder, contentDescription = stringResource(R.string.detail_move_to_folder))
                     }
-                    IconButton(onClick = {
-                        val send = Intent(Intent.ACTION_SEND).apply {
-                            type = "text/plain"
-                            putExtra(Intent.EXTRA_SUBJECT, title)
-                            putExtra(Intent.EXTRA_TEXT, "$title\n\n$content")
+                    Box {
+                        IconButton(onClick = { showShareMenu = true }) {
+                            Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.detail_share))
                         }
-                        context.startActivity(Intent.createChooser(send, null))
-                    }) {
-                        Icon(Icons.Filled.Share, contentDescription = stringResource(R.string.detail_share))
+                        DropdownMenu(expanded = showShareMenu, onDismissRequest = { showShareMenu = false }) {
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.detail_share)) },
+                                onClick = {
+                                    showShareMenu = false
+                                    val send = Intent(Intent.ACTION_SEND).apply {
+                                        type = "text/plain"
+                                        putExtra(Intent.EXTRA_SUBJECT, title)
+                                        putExtra(Intent.EXTRA_TEXT, "$title\n\n$content")
+                                    }
+                                    context.startActivity(Intent.createChooser(send, null))
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.detail_export_text)) },
+                                onClick = {
+                                    showShareMenu = false
+                                    val current = note
+                                    if (current != null) {
+                                        val uri = NoteExporter.exportAsText(context, current.copy(title = title, content = content))
+                                        shareFile(context, uri, "text/plain")
+                                    }
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.detail_export_pdf)) },
+                                onClick = {
+                                    showShareMenu = false
+                                    val current = note
+                                    if (current != null) {
+                                        val uri = NoteExporter.exportAsPdf(context, current.copy(title = title, content = content))
+                                        shareFile(context, uri, "application/pdf")
+                                    }
+                                },
+                            )
+                        }
                     }
                     IconButton(onClick = { showDeleteDialog = true }) {
                         Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.detail_delete))
@@ -340,6 +473,29 @@ fun NoteDetailScreen(
                     Icon(Icons.Filled.Folder, contentDescription = null, tint = folderColor, modifier = Modifier.size(16.dp))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(currentFolder.name, style = MaterialTheme.typography.labelLarge, color = folderColor)
+                }
+            }
+
+            note?.reminderAt?.let { reminderAt ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable {
+                            pendingDateMillis = null
+                            showDatePicker = true
+                        },
+                    ) {
+                        Icon(Icons.Filled.Alarm, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(formatDateTime(reminderAt), style = MaterialTheme.typography.labelLarge, color = accent)
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        "×",
+                        color = accent,
+                        modifier = Modifier.clickable { viewModel.setReminder(null) },
+                    )
                 }
             }
 
@@ -426,6 +582,15 @@ fun NoteDetailScreen(
             }
         }
     }
+}
+
+private fun shareFile(context: android.content.Context, uri: android.net.Uri, mimeType: String) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = mimeType
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(intent, null))
 }
 
 @Composable

@@ -41,4 +41,13 @@
     <string name="detail_move_to_folder">In Ordner verschieben</string>
     <string name="folder_none">Kein Ordner</string>
     <string name="folder_new_hint">Neuer Ordner…</string>
+
+    <string name="detail_reminder">Erinnerung</string>
+    <string name="detail_reminder_pick_time">Uhrzeit wählen</string>
+
+    <string name="widget_record_label">Aufnehmen</string>
+    <string name="widget_description">Neue Sprachnotiz mit einem Tipp aufnehmen</string>
+
+    <string name="detail_export_text">Als Text exportieren (.txt)</string>
+    <string name="detail_export_pdf">Als PDF exportieren</string>
 </resources>

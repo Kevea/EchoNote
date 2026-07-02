@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.echonote.app.EchoNoteApp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
+import com.echonote.app.util.ReminderScheduler
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -110,6 +111,9 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private var lastDeleted: List<Note> = emptyList()
 
     fun delete(note: Note, onDeleted: () -> Unit) {
+        if (note.reminderAt != null) {
+            ReminderScheduler.cancel(getApplication(), note.id)
+        }
         viewModelScope.launch {
             lastDeleted = listOf(note)
             repository.delete(note)
@@ -165,6 +169,11 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun bulkDelete(onDeleted: () -> Unit) {
         val ids = _selectedIds.value
         val toDelete = notes.value.filter { it.id in ids }
+        toDelete.forEach { note ->
+            if (note.reminderAt != null) {
+                ReminderScheduler.cancel(getApplication(), note.id)
+            }
+        }
         viewModelScope.launch {
             lastDeleted = toDelete
             toDelete.forEach { repository.delete(it) }

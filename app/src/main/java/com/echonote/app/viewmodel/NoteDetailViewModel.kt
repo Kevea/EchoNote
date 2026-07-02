@@ -7,6 +7,7 @@ import com.echonote.app.EchoNoteApp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
 import com.echonote.app.util.AudioPlayerController
+import com.echonote.app.util.ReminderScheduler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -57,8 +58,22 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
         }
     }
 
+    fun setReminder(timestampMs: Long?) {
+        val current = note.value ?: return
+        val app = getApplication<Application>()
+        viewModelScope.launch { repository.update(current.copy(reminderAt = timestampMs)) }
+        if (timestampMs != null) {
+            ReminderScheduler.schedule(app, current.id, timestampMs, current.title.ifBlank { "Notiz" })
+        } else {
+            ReminderScheduler.cancel(app, current.id)
+        }
+    }
+
     fun deleteNote(onDeleted: () -> Unit) {
         val current = note.value ?: return
+        if (current.reminderAt != null) {
+            ReminderScheduler.cancel(getApplication(), current.id)
+        }
         viewModelScope.launch {
             repository.delete(current)
             onDeleted()

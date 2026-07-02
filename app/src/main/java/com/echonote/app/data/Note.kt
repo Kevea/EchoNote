@@ -16,6 +16,7 @@ data class Note(
     val isPinned: Boolean = false,
     val colorTag: Int = 0,
     val sortOrder: Long = System.currentTimeMillis(),
+    val reminderAt: Long? = null,
     val createdAt: Long = System.currentTimeMillis(),
     val updatedAt: Long = System.currentTimeMillis(),
 ) {
