@@ -30,18 +30,29 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     private val _activeTag = MutableStateFlow<String?>(null)
     val activeTag: StateFlow<String?> = _activeTag.asStateFlow()
 
+    private val _activeFolder = MutableStateFlow<String?>(null)
+    val activeFolder: StateFlow<String?> = _activeFolder.asStateFlow()
+
     private val allFiltered: StateFlow<List<Note>> = _searchQuery
         .flatMapLatest { repository.search(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    val notes: StateFlow<List<Note>> = combine(allFiltered, _pinnedOnly, _activeTag) { list, pinnedOnly, tag ->
+    val notes: StateFlow<List<Note>> = combine(
+        allFiltered, _pinnedOnly, _activeTag, _activeFolder,
+    ) { list, pinnedOnly, tag, folder ->
         list.filter { note ->
-            (!pinnedOnly || note.isPinned) && (tag == null || note.tagList.contains(tag))
+            (!pinnedOnly || note.isPinned) &&
+                (tag == null || note.tagList.contains(tag)) &&
+                (folder == null || note.folder == folder)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val availableTags: StateFlow<List<String>> = allFiltered
         .map { list -> list.flatMap { it.tagList }.distinct().sorted() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    val availableFolders: StateFlow<List<String>> = allFiltered
+        .map { list -> list.mapNotNull { it.folder.takeIf { f -> f.isNotBlank() } }.distinct().sorted() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun onSearchQueryChange(query: String) {
@@ -54,6 +65,10 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     fun setActiveTag(tag: String?) {
         _activeTag.value = if (_activeTag.value == tag) null else tag
+    }
+
+    fun setActiveFolder(folder: String?) {
+        _activeFolder.value = if (_activeFolder.value == folder) null else folder
     }
 
     fun togglePin(note: Note) {

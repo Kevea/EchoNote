@@ -1,12 +1,9 @@
 package com.echonote.app.util
 
 import android.content.Context
-import android.media.MediaRecorder
-import android.os.Build
 import android.speech.RecognitionListener
 import android.speech.RecognizerIntent
 import android.speech.SpeechRecognizer
-import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
@@ -32,77 +29,41 @@ data class CaptureUiState(
 }
 
 data class CaptureResult(
-    val audioFile: File?,
     val durationMs: Long,
     val amplitudes: List<Int>,
     val transcript: String,
 )
 
+private const val RMS_REFERENCE = 12f
+private const val AMPLITUDE_SCALE = 14000f
+
 /**
- * Records audio to a file while simultaneously running live speech recognition.
- * Recorder and recognizer are independent OS audio clients; either can fail on a given
- * device without taking the other down, so both are wrapped defensively.
+ * Speech recognition is the sole mic client here. Earlier this ran a MediaRecorder in
+ * parallel to also save playable audio, but on several devices (e.g. Samsung) the OS grants
+ * the mic to only one capture session at a time, so the recognizer silently got no audio.
+ * Transcription is the feature that matters, so it now owns the mic exclusively.
  */
 class VoiceCaptureController(private val context: Context) {
 
     private val _state = MutableStateFlow(CaptureUiState())
     val state: StateFlow<CaptureUiState> = _state.asStateFlow()
 
-    private var recorder: MediaRecorder? = null
     private var recognizer: SpeechRecognizer? = null
-    private var outputFile: File? = null
     private var startElapsedRealtime = 0L
     private var tickerJob: Job? = null
     private var wantsListening = false
 
-    fun start(scope: CoroutineScope, targetFile: File) {
-        outputFile = targetFile
+    fun start(scope: CoroutineScope) {
         startElapsedRealtime = System.currentTimeMillis()
         _state.value = CaptureUiState(isRecording = true)
 
-        startRecorder(targetFile)
         startRecognizer()
 
         tickerJob = scope.launch {
             while (isActive && _state.value.isRecording) {
-                val amp = try {
-                    recorder?.maxAmplitude ?: 0
-                } catch (_: IllegalStateException) {
-                    0
-                }
-                _state.update {
-                    it.copy(
-                        elapsedMs = System.currentTimeMillis() - startElapsedRealtime,
-                        amplitude = amp,
-                        amplitudeHistory = it.amplitudeHistory + amp,
-                    )
-                }
+                _state.update { it.copy(elapsedMs = System.currentTimeMillis() - startElapsedRealtime) }
                 delay(100)
             }
-        }
-    }
-
-    private fun startRecorder(targetFile: File) {
-        try {
-            @Suppress("DEPRECATION")
-            val mr = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                MediaRecorder(context)
-            } else {
-                MediaRecorder()
-            }
-            mr.apply {
-                setAudioSource(MediaRecorder.AudioSource.MIC)
-                setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-                setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-                setAudioEncodingBitRate(96000)
-                setAudioSamplingRate(44100)
-                setOutputFile(targetFile.absolutePath)
-                prepare()
-                start()
-            }
-            recorder = mr
-        } catch (_: Exception) {
-            recorder = null
         }
     }
 
@@ -116,7 +77,12 @@ class VoiceCaptureController(private val context: Context) {
         sr.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: android.os.Bundle?) = Unit
             override fun onBeginningOfSpeech() = Unit
-            override fun onRmsChanged(rmsdB: Float) = Unit
+
+            override fun onRmsChanged(rmsdB: Float) {
+                val amp = ((rmsdB.coerceIn(0f, RMS_REFERENCE) / RMS_REFERENCE) * AMPLITUDE_SCALE).toInt()
+                _state.update { it.copy(amplitude = amp, amplitudeHistory = it.amplitudeHistory + amp) }
+            }
+
             override fun onBufferReceived(buffer: ByteArray?) = Unit
             override fun onEndOfSpeech() = Unit
 
@@ -183,14 +149,6 @@ class VoiceCaptureController(private val context: Context) {
         tickerJob = null
 
         try {
-            recorder?.stop()
-        } catch (_: Exception) {
-            // no audio captured (e.g. too short or device rejected concurrent capture)
-        }
-        recorder?.release()
-        recorder = null
-
-        try {
             recognizer?.stopListening()
             recognizer?.destroy()
         } catch (_: Exception) {
@@ -201,10 +159,7 @@ class VoiceCaptureController(private val context: Context) {
         val finalState = _state.value
         _state.value = finalState.copy(isRecording = false)
 
-        val file = outputFile
-        val hasAudio = file != null && file.exists() && file.length() > 0
         return CaptureResult(
-            audioFile = if (hasAudio) file else null,
             durationMs = finalState.elapsedMs,
             amplitudes = finalState.amplitudeHistory,
             transcript = finalState.liveTranscript,
@@ -216,20 +171,12 @@ class VoiceCaptureController(private val context: Context) {
         tickerJob?.cancel()
         tickerJob = null
         try {
-            recorder?.stop()
-        } catch (_: Exception) {
-            // ignore
-        }
-        recorder?.release()
-        recorder = null
-        try {
             recognizer?.stopListening()
             recognizer?.destroy()
         } catch (_: Exception) {
             // ignore
         }
         recognizer = null
-        outputFile?.takeIf { it.exists() }?.delete()
         _state.value = CaptureUiState()
     }
 }

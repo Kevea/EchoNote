@@ -12,6 +12,7 @@ data class Note(
     val audioDurationMs: Long = 0,
     val amplitudes: String = "",
     val tags: String = "",
+    val folder: String = "",
     val isPinned: Boolean = false,
     val colorTag: Int = 0,
     val createdAt: Long = System.currentTimeMillis(),

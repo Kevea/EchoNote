@@ -23,6 +23,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Preview
@@ -88,6 +89,7 @@ fun NoteDetailScreen(
 ) {
     val note by viewModel.note.collectAsState()
     val playback by viewModel.player.state.collectAsState()
+    val availableFolders by viewModel.availableFolders.collectAsState()
     val context = LocalContext.current
 
     var title by remember { mutableStateOf("") }
@@ -96,6 +98,8 @@ fun NoteDetailScreen(
     var previewMode by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
+    var showFolderDialog by remember { mutableStateOf(false) }
+    var newFolderInput by remember { mutableStateOf("") }
     var tagInput by remember { mutableStateOf("") }
 
     LaunchedEffect(note?.id) {
@@ -126,6 +130,73 @@ fun NoteDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            },
+        )
+    }
+
+    if (showFolderDialog) {
+        AlertDialog(
+            onDismissRequest = { showFolderDialog = false },
+            title = { Text(stringResource(R.string.detail_move_to_folder)) },
+            text = {
+                Column {
+                    Text(
+                        text = stringResource(R.string.folder_none),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                viewModel.setFolder("")
+                                showFolderDialog = false
+                            }
+                            .padding(vertical = 10.dp),
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                    availableFolders.forEach { folder ->
+                        Text(
+                            text = folder,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    viewModel.setFolder(folder)
+                                    showFolderDialog = false
+                                }
+                                .padding(vertical = 10.dp),
+                            style = MaterialTheme.typography.bodyLarge,
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = newFolderInput,
+                        onValueChange = { newFolderInput = it },
+                        placeholder = { Text(stringResource(R.string.folder_new_hint)) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = {
+                            val name = newFolderInput.trim()
+                            if (name.isNotEmpty()) {
+                                viewModel.setFolder(name)
+                                newFolderInput = ""
+                                showFolderDialog = false
+                            }
+                        }),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    val name = newFolderInput.trim()
+                    if (name.isNotEmpty()) {
+                        viewModel.setFolder(name)
+                        newFolderInput = ""
+                    }
+                    showFolderDialog = false
+                }) { Text(stringResource(R.string.action_done)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFolderDialog = false }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             },
@@ -185,6 +256,9 @@ fun NoteDetailScreen(
                             }
                         }
                     }
+                    IconButton(onClick = { showFolderDialog = true }) {
+                        Icon(Icons.Filled.Folder, contentDescription = stringResource(R.string.detail_move_to_folder))
+                    }
                     IconButton(onClick = {
                         val send = Intent(Intent.ACTION_SEND).apply {
                             type = "text/plain"
@@ -232,6 +306,18 @@ fun NoteDetailScreen(
                     accent = accent,
                     onToggle = { viewModel.togglePlayback() },
                 )
+            }
+
+            if (!note?.folder.isNullOrBlank()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.clickable { showFolderDialog = true },
+                ) {
+                    Icon(Icons.Filled.Folder, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(note?.folder.orEmpty(), style = MaterialTheme.typography.labelLarge, color = accent)
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

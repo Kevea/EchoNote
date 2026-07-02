@@ -5,15 +5,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.UUID
 
-class NoteRepository(
-    private val context: Context,
-    private val dao: NoteDao,
-) {
-    val audioDir: File by lazy {
-        File(context.filesDir, "audio").apply { mkdirs() }
-    }
+class NoteRepository(private val dao: NoteDao) {
 
     fun observeAll(): Flow<List<Note>> = dao.observeAll()
 
@@ -21,8 +14,6 @@ class NoteRepository(
         if (query.isBlank()) dao.observeAll() else dao.search(query)
 
     fun observeById(id: Long): Flow<Note?> = dao.observeById(id)
-
-    fun newAudioFile(): File = File(audioDir, "voice_${UUID.randomUUID()}.m4a")
 
     suspend fun save(note: Note): Long = withContext(Dispatchers.IO) {
         dao.insert(note)
@@ -43,10 +34,7 @@ class NoteRepository(
 
         fun getInstance(context: Context): NoteRepository =
             instance ?: synchronized(this) {
-                instance ?: NoteRepository(
-                    context.applicationContext,
-                    NoteDatabase.getInstance(context).noteDao()
-                ).also { instance = it }
+                instance ?: NoteRepository(NoteDatabase.getInstance(context).noteDao()).also { instance = it }
             }
     }
 }

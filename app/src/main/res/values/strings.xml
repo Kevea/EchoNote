@@ -30,10 +30,15 @@
     <string name="detail_delete_confirm_body">Diese Notiz und die zugehörige Sprachaufnahme werden endgültig gelöscht.</string>
     <string name="action_cancel">Abbrechen</string>
     <string name="action_delete">Löschen</string>
+    <string name="action_done">Fertig</string>
 
     <string name="note_saved">Notiz gespeichert</string>
     <string name="note_deleted">Notiz gelöscht</string>
     <string name="action_undo">Rückgängig</string>
 
     <string name="tag_add_hint">Tag hinzufügen…</string>
+
+    <string name="detail_move_to_folder">In Ordner verschieben</string>
+    <string name="folder_none">Kein Ordner</string>
+    <string name="folder_new_hint">Neuer Ordner…</string>
 </resources>

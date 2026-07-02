@@ -26,7 +26,7 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
     val savedNoteId: StateFlow<Long?> = _savedNoteId.asStateFlow()
 
     fun startRecording() {
-        controller.start(viewModelScope, repository.newAudioFile())
+        controller.start(viewModelScope)
     }
 
     fun cancelRecording() {
@@ -35,14 +35,13 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
 
     fun stopAndSave() {
         val result = controller.stop()
-        if (result.transcript.isBlank() && result.audioFile == null) return
+        if (result.transcript.isBlank()) return
 
         viewModelScope.launch {
             val title = generateTitle(result.transcript)
             val note = Note(
                 title = title,
                 content = result.transcript,
-                audioFilePath = result.audioFile?.absolutePath,
                 audioDurationMs = result.durationMs,
                 amplitudes = result.amplitudes.filterIndexed { i, _ -> i % 3 == 0 }.joinToString(","),
             )

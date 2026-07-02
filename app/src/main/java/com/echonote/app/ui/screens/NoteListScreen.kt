@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.items as staggeredItems
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.Search
@@ -65,6 +66,8 @@ fun NoteListScreen(
     val pinnedOnly by viewModel.pinnedOnly.collectAsState()
     val activeTag by viewModel.activeTag.collectAsState()
     val availableTags by viewModel.availableTags.collectAsState()
+    val activeFolder by viewModel.activeFolder.collectAsState()
+    val availableFolders by viewModel.availableFolders.collectAsState()
 
     var searchActive by rememberSaveable { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
@@ -115,6 +118,13 @@ fun NoteListScreen(
         },
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
+            if (availableFolders.isNotEmpty()) {
+                FolderRow(
+                    activeFolder = activeFolder,
+                    availableFolders = availableFolders,
+                    onFolderSelected = viewModel::setActiveFolder,
+                )
+            }
             FilterRow(
                 pinnedOnly = pinnedOnly,
                 activeTag = activeTag,
@@ -190,6 +200,27 @@ private fun FilterRow(
                 selected = activeTag == tag,
                 onClick = { onTagSelected(tag) },
                 label = { Text(tag) },
+            )
+        }
+    }
+}
+
+@Composable
+private fun FolderRow(
+    activeFolder: String?,
+    availableFolders: List<String>,
+    onFolderSelected: (String) -> Unit,
+) {
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(availableFolders) { folder ->
+            FilterChip(
+                selected = activeFolder == folder,
+                onClick = { onFolderSelected(folder) },
+                leadingIcon = { Icon(Icons.Filled.Folder, contentDescription = null, modifier = Modifier.size(16.dp)) },
+                label = { Text(folder) },
             )
         }
     }

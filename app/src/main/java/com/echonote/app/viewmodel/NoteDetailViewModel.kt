@@ -8,6 +8,7 @@ import com.echonote.app.data.Note
 import com.echonote.app.util.AudioPlayerController
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -18,6 +19,10 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
 
     val note: StateFlow<Note?> = repository.observeById(noteId)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val availableFolders: StateFlow<List<String>> = repository.observeAll()
+        .map { list -> list.mapNotNull { it.folder.takeIf { f -> f.isNotBlank() } }.distinct().sorted() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun saveTitleAndContent(title: String, content: String) {
         val current = note.value ?: return
@@ -38,6 +43,11 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
     fun setTags(tags: List<String>) {
         val current = note.value ?: return
         viewModelScope.launch { repository.update(current.copy(tags = tags.joinToString(","))) }
+    }
+
+    fun setFolder(folder: String) {
+        val current = note.value ?: return
+        viewModelScope.launch { repository.update(current.copy(folder = folder)) }
     }
 
     fun deleteNote(onDeleted: () -> Unit) {
