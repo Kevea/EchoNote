@@ -437,7 +437,15 @@ private fun DrawerContent(
                                                 dragPosition = handleRoot + dragAccum
                                             },
                                             onDragEnd = {
-                                                val targetId = dragTargetId
+                                                // pointerInput(folder.id) never restarts mid-gesture (its key never
+                                                // changes), so this closure is fixed at the moment the gesture began
+                                                // and can't see later recompositions. Re-derive the drop target here
+                                                // from the still-live handleRoot/dragAccum vars and folderRowBounds
+                                                // .value, instead of referencing the (stale) outer dragTargetId.
+                                                val pos = handleRoot + dragAccum
+                                                val targetId = folderRowBounds.value.entries
+                                                    .find { it.key != folder.id && it.value.contains(pos) }
+                                                    ?.key
                                                 if (targetId != null) {
                                                     val targetIndex = folders.indexOfFirst { it.id == targetId }
                                                     if (targetIndex >= 0) {

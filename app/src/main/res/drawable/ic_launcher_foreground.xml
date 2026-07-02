@@ -4,7 +4,11 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Intentionally empty: ic_launcher_background.png already contains the full
-         artwork (mic centered in the colorful burst), so no separate foreground layer
-         is drawn on top of it. -->
+    <!-- ic_launcher_background.png already contains the full artwork (mic centered in
+         the colorful burst), so this layer draws nothing on top of it. A fully
+         transparent full-canvas path is used instead of an empty vector, since some
+         launchers handle a zero-content adaptive-icon layer inconsistently. -->
+    <path
+        android:pathData="M0,0h108v108h-108z"
+        android:fillColor="#00000000" />
 </vector>
