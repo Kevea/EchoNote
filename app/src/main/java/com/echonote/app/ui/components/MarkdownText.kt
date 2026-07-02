@@ -14,12 +14,10 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 
-/**
- * Minimal Obsidian-style markdown renderer: headers (#/##/###), bullet lists (- ),
- * and inline **bold** / _italic_. Intentionally not a full CommonMark parser.
- */
+// Minimal Obsidian-style renderer: headers, bullets, **bold**/_italic_ — not full CommonMark.
 @Composable
 fun MarkdownText(text: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
