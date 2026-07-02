@@ -551,6 +551,10 @@ fun NoteDetailScreen(
                         tagInput = ""
                     }
                 }),
+                colors = OutlinedTextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                    focusedContainerColor = MaterialTheme.colorScheme.background,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 8.dp),
