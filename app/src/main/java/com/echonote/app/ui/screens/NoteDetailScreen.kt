@@ -111,7 +111,7 @@ fun NoteDetailScreen(
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
     var initialized by remember { mutableStateOf(false) }
-    var previewMode by remember { mutableStateOf(false) }
+    var previewMode by remember { mutableStateOf(true) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showFolderDialog by remember { mutableStateOf(false) }
@@ -317,6 +317,10 @@ fun NoteDetailScreen(
     }
 
     val accent = NoteTagColors.getOrElse(note?.colorTag ?: 0) { NoteTagColors.first() }
+    // The whole note body follows the preview/edit toggle: solid background while editing
+    // (focused writing look), transparent while previewing (the app's themed background
+    // shows through, matching how MarkdownText itself has no background).
+    val cardBackground = if (previewMode) Color.Transparent else MaterialTheme.colorScheme.background
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -448,13 +452,14 @@ fun NoteDetailScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
         ) {
-            // Title through tag input share one continuous solid background - wrapping them
-            // together (rather than giving each field its own container color) avoids gaps
-            // between them showing the page's gradient/mesh background through the Spacers.
+            // Title through tag input share one continuous background - wrapping them together
+            // (rather than giving each field its own container color) avoids gaps between them
+            // showing the page's gradient/mesh background through the Spacers. It follows
+            // cardBackground so this cluster switches with the preview/edit toggle below too.
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background),
+                    .background(cardBackground),
             ) {
                 TextField(
                     value = title,
@@ -462,8 +467,8 @@ fun NoteDetailScreen(
                     placeholder = { Text(stringResource(R.string.detail_title_hint)) },
                     textStyle = MaterialTheme.typography.headlineMedium,
                     colors = TextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = cardBackground,
+                        focusedContainerColor = cardBackground,
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
                     ),
@@ -560,8 +565,8 @@ fun NoteDetailScreen(
                         }
                     }),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = cardBackground,
+                        focusedContainerColor = cardBackground,
                         unfocusedBorderColor = Color.Transparent,
                         focusedBorderColor = Color.Transparent,
                     ),
@@ -572,7 +577,9 @@ fun NoteDetailScreen(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(cardBackground),
                 horizontalArrangement = Arrangement.End,
             ) {
                 TextButton(onClick = { previewMode = !previewMode }) {
@@ -589,6 +596,7 @@ fun NoteDetailScreen(
                     text = content,
                     modifier = Modifier
                         .fillMaxSize()
+                        .background(cardBackground)
                         .padding(bottom = 24.dp),
                 )
             } else {
@@ -600,8 +608,8 @@ fun NoteDetailScreen(
                         .fillMaxSize()
                         .padding(bottom = 24.dp),
                     colors = OutlinedTextFieldDefaults.colors(
-                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedContainerColor = cardBackground,
+                        focusedContainerColor = cardBackground,
                         unfocusedBorderColor = Color.Transparent,
                         focusedBorderColor = Color.Transparent,
                     ),
