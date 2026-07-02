@@ -95,12 +95,27 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch { repository.updateFolder(folder) }
     }
 
+    fun reorderFolders(orderedFolders: List<Folder>) {
+        val changed = orderedFolders.mapIndexedNotNull { index, folder ->
+            if (folder.sortOrder == index.toLong()) null else folder.copy(sortOrder = index.toLong())
+        }
+        if (changed.isEmpty()) return
+        viewModelScope.launch { changed.forEach { repository.updateFolder(it) } }
+    }
+
     fun deleteFolder(folder: Folder) {
         viewModelScope.launch {
             repository.deleteFolder(folder)
             if (_folderFilter.value == FolderFilter.Specific(folder.id)) {
                 _folderFilter.value = FolderFilter.Unfiled
             }
+        }
+    }
+
+    fun createBlankNote(onCreated: (Long) -> Unit) {
+        viewModelScope.launch {
+            val id = repository.save(Note(title = "", content = ""))
+            onCreated(id)
         }
     }
 

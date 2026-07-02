@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -52,6 +53,7 @@ fun SettingsScreen(
     val settings by viewModel.settings.collectAsState()
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = { Text("Einstellungen") },
@@ -66,6 +68,7 @@ fun SettingsScreen(
         Column(
             modifier = Modifier
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
             Text("Akzentfarbe", style = MaterialTheme.typography.titleMedium)
@@ -90,6 +93,35 @@ fun SettingsScreen(
                         contentAlignment = Alignment.Center,
                     ) {
                         if (index == settings.accentColorIndex) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Grundfarbe (Hintergrund)", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                NoteTagColors.forEachIndexed { index, color ->
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(color, CircleShape)
+                            .then(
+                                if (index == settings.baseColorIndex) {
+                                    Modifier.border(3.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .clickable { viewModel.setBaseColor(index) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (index == settings.baseColorIndex) {
                             Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White)
                         }
                     }
@@ -176,6 +208,7 @@ fun SettingsScreen(
                     )
                 }
             }
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -189,4 +222,6 @@ private fun darkModeLabel(option: DarkModeOption): String = when (option) {
 private fun backgroundStyleLabel(option: BackgroundStyle): String = when (option) {
     BackgroundStyle.SOLID -> "Einfarbig"
     BackgroundStyle.GRADIENT -> "Farbverlauf"
+    BackgroundStyle.RADIAL -> "Radialer Verlauf"
+    BackgroundStyle.MESH -> "Mesh (mehrfarbig)"
 }

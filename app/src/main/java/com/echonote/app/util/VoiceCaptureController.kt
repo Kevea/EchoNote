@@ -17,6 +17,7 @@ import kotlinx.coroutines.launch
 
 data class CaptureUiState(
     val isRecording: Boolean = false,
+    val isPaused: Boolean = false,
     val elapsedMs: Long = 0L,
     val amplitude: Int = 0,
     val amplitudeHistory: List<Int> = emptyList(),
@@ -49,21 +50,28 @@ class VoiceCaptureController(private val context: Context) {
     val state: StateFlow<CaptureUiState> = _state.asStateFlow()
 
     private var recognizer: SpeechRecognizer? = null
-    private var startElapsedRealtime = 0L
+    private var segmentStartRealtime = 0L
+    private var accumulatedElapsedMs = 0L
     private var tickerJob: Job? = null
     private var wantsListening = false
+    private var recognizerGeneration = 0
 
     fun start(scope: CoroutineScope) {
-        startElapsedRealtime = System.currentTimeMillis()
+        accumulatedElapsedMs = 0L
+        segmentStartRealtime = System.currentTimeMillis()
         _state.value = CaptureUiState(isRecording = true)
 
         startRecognizer()
+        startTicker(scope)
+    }
 
+    private fun startTicker(scope: CoroutineScope) {
+        tickerJob?.cancel()
         tickerJob = scope.launch {
-            while (isActive && _state.value.isRecording) {
+            while (isActive && _state.value.isRecording && !_state.value.isPaused) {
                 _state.update {
                     it.copy(
-                        elapsedMs = System.currentTimeMillis() - startElapsedRealtime,
+                        elapsedMs = accumulatedElapsedMs + (System.currentTimeMillis() - segmentStartRealtime),
                         amplitudeHistory = it.amplitudeHistory + it.amplitude,
                     )
                 }
@@ -72,12 +80,47 @@ class VoiceCaptureController(private val context: Context) {
         }
     }
 
+    fun pause() {
+        val current = _state.value
+        if (!current.isRecording || current.isPaused) return
+        wantsListening = false
+        tickerJob?.cancel()
+        tickerJob = null
+        accumulatedElapsedMs += System.currentTimeMillis() - segmentStartRealtime
+        try {
+            recognizer?.stopListening()
+            recognizer?.destroy()
+        } catch (_: Exception) {
+            // already destroyed
+        }
+        recognizer = null
+        _state.update {
+            // stopListening()'s final onResults can arrive too late (or not at all) once the
+            // recognizer is destroyed right after, so fold whatever was still only "partial"
+            // into finalTranscript here instead of relying on that callback to preserve it.
+            val combined = listOf(it.finalTranscript, it.partialTranscript)
+                .filter { s -> s.isNotBlank() }
+                .joinToString(" ")
+            it.copy(isPaused = true, amplitude = 0, finalTranscript = combined, partialTranscript = "")
+        }
+    }
+
+    fun resume(scope: CoroutineScope) {
+        val current = _state.value
+        if (!current.isRecording || !current.isPaused) return
+        segmentStartRealtime = System.currentTimeMillis()
+        _state.update { it.copy(isPaused = false) }
+        startRecognizer()
+        startTicker(scope)
+    }
+
     private fun startRecognizer() {
         if (!SpeechRecognizer.isRecognitionAvailable(context)) {
             _state.update { it.copy(speechAvailable = false) }
             return
         }
         wantsListening = true
+        val generation = ++recognizerGeneration
         val sr = SpeechRecognizer.createSpeechRecognizer(context)
         sr.setRecognitionListener(object : RecognitionListener {
             override fun onReadyForSpeech(params: android.os.Bundle?) = Unit
@@ -87,6 +130,7 @@ class VoiceCaptureController(private val context: Context) {
                 // onRmsChanged can fire much more often than the 100ms ticker; only the
                 // ticker samples this into amplitudeHistory, so this update stays O(1)
                 // instead of copying a growing list on every callback.
+                if (generation != recognizerGeneration) return
                 val amp = ((rmsdB.coerceIn(0f, RMS_REFERENCE) / RMS_REFERENCE) * AMPLITUDE_SCALE).toInt()
                 _state.update { it.copy(amplitude = amp) }
             }
@@ -95,10 +139,15 @@ class VoiceCaptureController(private val context: Context) {
             override fun onEndOfSpeech() = Unit
 
             override fun onError(error: Int) {
-                if (wantsListening) restartListening(sr)
+                if (wantsListening && generation == recognizerGeneration) restartListening(sr)
             }
 
             override fun onResults(results: android.os.Bundle?) {
+                // A recognizer destroyed by pause()/stop()/cancel() can still deliver this
+                // callback afterwards; recognizerGeneration guards against it re-appending
+                // text that pause() already folded into finalTranscript, or resuscitating a
+                // session that should stay dead.
+                if (generation != recognizerGeneration) return
                 val text = results
                     ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     ?.firstOrNull()
@@ -113,6 +162,7 @@ class VoiceCaptureController(private val context: Context) {
             }
 
             override fun onPartialResults(partialResults: android.os.Bundle?) {
+                if (generation != recognizerGeneration) return
                 val text = partialResults
                     ?.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION)
                     ?.firstOrNull()

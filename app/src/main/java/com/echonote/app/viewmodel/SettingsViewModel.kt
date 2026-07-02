@@ -16,6 +16,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     fun setAccentColor(index: Int) = preferences.setAccentColor(index)
 
+    fun setBaseColor(index: Int) = preferences.setBaseColor(index)
+
     fun setDarkMode(mode: DarkModeOption) = preferences.setDarkMode(mode)
 
     fun setColorfulCards(enabled: Boolean) = preferences.setColorfulCards(enabled)

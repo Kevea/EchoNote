@@ -6,10 +6,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 enum class DarkModeOption { SYSTEM, LIGHT, DARK }
-enum class BackgroundStyle { SOLID, GRADIENT }
+enum class BackgroundStyle { SOLID, GRADIENT, RADIAL, MESH }
 
 data class ThemeSettings(
     val accentColorIndex: Int = 0,
+    val baseColorIndex: Int = 6,
     val darkMode: DarkModeOption = DarkModeOption.SYSTEM,
     val colorfulCards: Boolean = true,
     val roundedCards: Boolean = true,
@@ -24,6 +25,7 @@ class ThemePreferences(context: Context) {
 
     private fun load(): ThemeSettings = ThemeSettings(
         accentColorIndex = prefs.getInt(KEY_COLOR, 0),
+        baseColorIndex = prefs.getInt(KEY_BASE_COLOR, 6),
         darkMode = DarkModeOption.entries.getOrElse(prefs.getInt(KEY_MODE, 0)) { DarkModeOption.SYSTEM },
         colorfulCards = prefs.getBoolean(KEY_COLORFUL_CARDS, true),
         roundedCards = prefs.getBoolean(KEY_ROUNDED_CARDS, true),
@@ -33,6 +35,11 @@ class ThemePreferences(context: Context) {
     fun setAccentColor(index: Int) {
         prefs.edit().putInt(KEY_COLOR, index).apply()
         _settings.value = _settings.value.copy(accentColorIndex = index)
+    }
+
+    fun setBaseColor(index: Int) {
+        prefs.edit().putInt(KEY_BASE_COLOR, index).apply()
+        _settings.value = _settings.value.copy(baseColorIndex = index)
     }
 
     fun setDarkMode(mode: DarkModeOption) {
@@ -58,6 +65,7 @@ class ThemePreferences(context: Context) {
     companion object {
         private const val PREFS_NAME = "echonote_settings"
         private const val KEY_COLOR = "accent_color"
+        private const val KEY_BASE_COLOR = "base_color"
         private const val KEY_MODE = "dark_mode"
         private const val KEY_COLORFUL_CARDS = "colorful_cards"
         private const val KEY_ROUNDED_CARDS = "rounded_cards"

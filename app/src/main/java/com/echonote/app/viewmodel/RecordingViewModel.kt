@@ -33,6 +33,14 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
         controller.cancel()
     }
 
+    fun pauseRecording() {
+        controller.pause()
+    }
+
+    fun resumeRecording() {
+        controller.resume(viewModelScope)
+    }
+
     fun stopAndSave() {
         val result = controller.stop()
         if (result.transcript.isBlank()) return

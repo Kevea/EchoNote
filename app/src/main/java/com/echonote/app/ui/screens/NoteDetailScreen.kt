@@ -319,6 +319,7 @@ fun NoteDetailScreen(
     val accent = NoteTagColors.getOrElse(note?.colorTag ?: 0) { NoteTagColors.first() }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             TopAppBar(
                 title = {},
@@ -418,6 +419,17 @@ fun NoteDetailScreen(
                                     if (current != null) {
                                         val uri = NoteExporter.exportAsPdf(context, current.copy(title = title, content = content))
                                         shareFile(context, uri, "application/pdf")
+                                    }
+                                },
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(R.string.detail_export_markdown)) },
+                                onClick = {
+                                    showShareMenu = false
+                                    val current = note
+                                    if (current != null) {
+                                        val uri = NoteExporter.exportAsMarkdown(context, current.copy(title = title, content = content))
+                                        shareFile(context, uri, "text/markdown")
                                     }
                                 },
                             )
