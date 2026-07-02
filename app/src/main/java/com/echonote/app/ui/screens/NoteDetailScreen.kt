@@ -448,119 +448,128 @@ fun NoteDetailScreen(
                 .fillMaxSize()
                 .padding(horizontal = 20.dp),
         ) {
-            TextField(
-                value = title,
-                onValueChange = { title = it },
-                placeholder = { Text(stringResource(R.string.detail_title_hint)) },
-                textStyle = MaterialTheme.typography.headlineMedium,
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedIndicatorColor = Color.Transparent,
-                    focusedIndicatorColor = Color.Transparent,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-
-            note?.audioFilePath?.let { path ->
-                Spacer(modifier = Modifier.height(8.dp))
-                AudioPlayerBar(
-                    isPlaying = playback.isPlaying,
-                    positionMs = playback.positionMs,
-                    durationMs = if (playback.durationMs > 0) playback.durationMs else note!!.audioDurationMs.toInt(),
-                    amplitudes = note!!.amplitudeList,
-                    accent = accent,
-                    onToggle = { viewModel.togglePlayback() },
+            // Title through tag input share one continuous solid background - wrapping them
+            // together (rather than giving each field its own container color) avoids gaps
+            // between them showing the page's gradient/mesh background through the Spacers.
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background),
+            ) {
+                TextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    placeholder = { Text(stringResource(R.string.detail_title_hint)) },
+                    textStyle = MaterialTheme.typography.headlineMedium,
+                    colors = TextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        focusedIndicatorColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
                 )
-            }
 
-            val currentFolder = availableFolders.find { it.id == note?.folderId }
-            if (currentFolder != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.clickable { showFolderDialog = true },
-                ) {
-                    val folderColor = NoteTagColors.getOrElse(currentFolder.colorIndex) { NoteTagColors.first() }
-                    Icon(Icons.Filled.Folder, contentDescription = null, tint = folderColor, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(currentFolder.name, style = MaterialTheme.typography.labelLarge, color = folderColor)
-                }
-            }
-
-            note?.reminderAt?.let { reminderAt ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.clickable {
-                            pendingDateMillis = null
-                            showDatePicker = true
-                        },
-                    ) {
-                        Icon(Icons.Filled.Alarm, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(formatDateTime(reminderAt), style = MaterialTheme.typography.labelLarge, color = accent)
-                    }
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        "×",
-                        color = accent,
-                        modifier = Modifier.clickable { viewModel.setReminder(null) },
+                note?.audioFilePath?.let { path ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    AudioPlayerBar(
+                        isPlaying = playback.isPlaying,
+                        positionMs = playback.positionMs,
+                        durationMs = if (playback.durationMs > 0) playback.durationMs else note!!.audioDurationMs.toInt(),
+                        amplitudes = note!!.amplitudeList,
+                        accent = accent,
+                        onToggle = { viewModel.togglePlayback() },
                     )
                 }
-            }
 
-            Spacer(modifier = Modifier.height(12.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                (note?.tagList ?: emptyList()).forEach { tag ->
-                    Card(
-                        shape = RoundedCornerShape(50),
-                        colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = 0.12f)),
+                val currentFolder = availableFolders.find { it.id == note?.folderId }
+                if (currentFolder != null) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.clickable { showFolderDialog = true },
                     ) {
+                        val folderColor = NoteTagColors.getOrElse(currentFolder.colorIndex) { NoteTagColors.first() }
+                        Icon(Icons.Filled.Folder, contentDescription = null, tint = folderColor, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(currentFolder.name, style = MaterialTheme.typography.labelLarge, color = folderColor)
+                    }
+                }
+
+                note?.reminderAt?.let { reminderAt ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.clickable {
+                                pendingDateMillis = null
+                                showDatePicker = true
+                            },
                         ) {
-                            Text(tag, color = accent, style = MaterialTheme.typography.labelMedium)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                "×",
-                                color = accent,
-                                modifier = Modifier.clickable {
-                                    viewModel.setTags((note?.tagList ?: emptyList()) - tag)
-                                },
-                            )
+                            Icon(Icons.Filled.Alarm, contentDescription = null, tint = accent, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(formatDateTime(reminderAt), style = MaterialTheme.typography.labelLarge, color = accent)
+                        }
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            "×",
+                            color = accent,
+                            modifier = Modifier.clickable { viewModel.setReminder(null) },
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    (note?.tagList ?: emptyList()).forEach { tag ->
+                        Card(
+                            shape = RoundedCornerShape(50),
+                            colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = 0.12f)),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            ) {
+                                Text(tag, color = accent, style = MaterialTheme.typography.labelMedium)
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    "×",
+                                    color = accent,
+                                    modifier = Modifier.clickable {
+                                        viewModel.setTags((note?.tagList ?: emptyList()) - tag)
+                                    },
+                                )
+                            }
                         }
                     }
                 }
+                OutlinedTextField(
+                    value = tagInput,
+                    onValueChange = { tagInput = it },
+                    placeholder = { Text(stringResource(R.string.tag_add_hint)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions = KeyboardActions(onDone = {
+                        val newTag = tagInput.trim()
+                        if (newTag.isNotEmpty()) {
+                            viewModel.setTags((note?.tagList ?: emptyList()) + newTag)
+                            tagInput = ""
+                        }
+                    }),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        unfocusedContainerColor = MaterialTheme.colorScheme.background,
+                        focusedContainerColor = MaterialTheme.colorScheme.background,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedBorderColor = Color.Transparent,
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                )
             }
-            OutlinedTextField(
-                value = tagInput,
-                onValueChange = { tagInput = it },
-                placeholder = { Text(stringResource(R.string.tag_add_hint)) },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                keyboardActions = KeyboardActions(onDone = {
-                    val newTag = tagInput.trim()
-                    if (newTag.isNotEmpty()) {
-                        viewModel.setTags((note?.tagList ?: emptyList()) + newTag)
-                        tagInput = ""
-                    }
-                }),
-                colors = OutlinedTextFieldDefaults.colors(
-                    unfocusedContainerColor = MaterialTheme.colorScheme.background,
-                    focusedContainerColor = MaterialTheme.colorScheme.background,
-                    unfocusedBorderColor = Color.Transparent,
-                    focusedBorderColor = Color.Transparent,
-                ),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-            )
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
