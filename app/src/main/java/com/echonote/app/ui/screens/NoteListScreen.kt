@@ -3,6 +3,7 @@ package com.echonote.app.ui.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.DriveFileMove
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FolderOff
@@ -73,6 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
@@ -174,6 +177,7 @@ fun NoteListScreen(
                         scope.launch { drawerState.close() }
                         onSettingsClick()
                     },
+                    onReorderFolders = viewModel::reorderFolders,
                 )
             }
         },
@@ -351,7 +355,17 @@ private fun DrawerContent(
     onEditFolder: (Folder) -> Unit,
     onNewFolder: () -> Unit,
     onSettings: () -> Unit,
+    onReorderFolders: (List<Folder>) -> Unit,
 ) {
+    // Drag-to-reorder state for the folder rows below, same "insert at position, everyone
+    // else shifts" approach as the note grid's reorder (not a swap with the drop target).
+    var draggingFolderId by remember { mutableStateOf<Long?>(null) }
+    var dragPosition by remember { mutableStateOf<Offset?>(null) }
+    val folderRowBounds = remember { mutableStateOf<Map<Long, Rect>>(emptyMap()) }
+    val dragTargetId = dragPosition?.let { pos ->
+        folderRowBounds.value.entries.find { it.key != draggingFolderId && it.value.contains(pos) }?.key
+    }
+
     // NavigationDrawerItem always fills the width it's given, so a drawer built from it can
     // only ever be as narrow as a fixed dp guess. This uses a plain (non-fillMaxWidth) row
     // instead, so IntrinsicSize.Min below can size the drawer to its actual widest label.
@@ -389,25 +403,76 @@ private fun DrawerContent(
           key(folder.id) {
             val color = NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() }
             var menuExpanded by remember { mutableStateOf(false) }
-            DrawerRow(
-                label = folder.name,
-                icon = { Box(modifier = Modifier.size(12.dp).background(color, CircleShape)) },
-                selected = folderFilter is FolderFilter.Specific && folderFilter.folderId == folder.id,
-                onClick = { onSelectFilter(FolderFilter.Specific(folder.id)) },
-                trailing = {
-                    Box {
-                        IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(20.dp)) {
-                            Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(16.dp))
-                        }
-                        DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
-                            DropdownMenuItem(
-                                text = { Text("Bearbeiten") },
-                                onClick = { menuExpanded = false; onEditFolder(folder) },
-                            )
-                        }
-                    }
+            Box(
+                modifier = Modifier.onGloballyPositioned { coords ->
+                    folderRowBounds.value = folderRowBounds.value + (folder.id to coords.boundsInRoot())
                 },
-            )
+            ) {
+                DrawerRow(
+                    label = folder.name,
+                    icon = { Box(modifier = Modifier.size(12.dp).background(color, CircleShape)) },
+                    selected = folderFilter is FolderFilter.Specific && folderFilter.folderId == folder.id,
+                    emphasized = folder.id == dragTargetId,
+                    onClick = { onSelectFilter(FolderFilter.Specific(folder.id)) },
+                    trailing = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            var dragAccum by remember { mutableStateOf(Offset.Zero) }
+                            var handleRoot by remember { mutableStateOf(Offset.Zero) }
+                            Icon(
+                                imageVector = Icons.Filled.DragIndicator,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier
+                                    .size(18.dp)
+                                    .onGloballyPositioned { coords -> handleRoot = coords.boundsInRoot().center }
+                                    .pointerInput(folder.id) {
+                                        detectDragGestures(
+                                            onDragStart = {
+                                                dragAccum = Offset.Zero
+                                                draggingFolderId = folder.id
+                                            },
+                                            onDrag = { change, delta ->
+                                                change.consume()
+                                                dragAccum += delta
+                                                dragPosition = handleRoot + dragAccum
+                                            },
+                                            onDragEnd = {
+                                                val targetId = dragTargetId
+                                                if (targetId != null) {
+                                                    val targetIndex = folders.indexOfFirst { it.id == targetId }
+                                                    if (targetIndex >= 0) {
+                                                        val reordered = folders.toMutableList()
+                                                        reordered.remove(folder)
+                                                        reordered.add(targetIndex, folder)
+                                                        onReorderFolders(reordered)
+                                                    }
+                                                }
+                                                draggingFolderId = null
+                                                dragPosition = null
+                                            },
+                                            onDragCancel = {
+                                                draggingFolderId = null
+                                                dragPosition = null
+                                            },
+                                        )
+                                    },
+                            )
+                            Spacer(modifier = Modifier.width(2.dp))
+                            Box {
+                                IconButton(onClick = { menuExpanded = true }, modifier = Modifier.size(20.dp)) {
+                                    Icon(Icons.Filled.MoreVert, contentDescription = null, modifier = Modifier.size(16.dp))
+                                }
+                                DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
+                                    DropdownMenuItem(
+                                        text = { Text("Bearbeiten") },
+                                        onClick = { menuExpanded = false; onEditFolder(folder) },
+                                    )
+                                }
+                            }
+                        }
+                    },
+                )
+            }
           }
         }
         DrawerRow(
@@ -433,13 +498,14 @@ private fun DrawerRow(
     selected: Boolean,
     onClick: () -> Unit,
     trailing: (@Composable () -> Unit)? = null,
+    emphasized: Boolean = false,
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .padding(horizontal = 8.dp, vertical = 2.dp)
             .clip(RoundedCornerShape(50))
-            .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent)
+            .background(if (selected || emphasized) MaterialTheme.colorScheme.secondaryContainer else androidx.compose.ui.graphics.Color.Transparent)
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 12.dp),
     ) {

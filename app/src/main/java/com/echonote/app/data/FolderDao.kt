@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface FolderDao {
 
-    @Query("SELECT * FROM folders ORDER BY name ASC")
+    @Query("SELECT * FROM folders ORDER BY sortOrder ASC")
     fun observeAll(): Flow<List<Folder>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
