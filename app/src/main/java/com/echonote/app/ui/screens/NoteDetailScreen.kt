@@ -28,6 +28,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Alarm
 import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Pause
@@ -112,6 +113,7 @@ fun NoteDetailScreen(
     var content by remember { mutableStateOf("") }
     var initialized by remember { mutableStateOf(false) }
     var previewMode by remember { mutableStateOf(true) }
+    var solidEditBackground by remember { mutableStateOf(true) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showColorPicker by remember { mutableStateOf(false) }
     var showFolderDialog by remember { mutableStateOf(false) }
@@ -319,8 +321,10 @@ fun NoteDetailScreen(
     val accent = NoteTagColors.getOrElse(note?.colorTag ?: 0) { NoteTagColors.first() }
     // The whole note body follows the preview/edit toggle: solid background while editing
     // (focused writing look), transparent while previewing (the app's themed background
-    // shows through, matching how MarkdownText itself has no background).
-    val cardBackground = if (previewMode) Color.Transparent else MaterialTheme.colorScheme.background
+    // shows through, matching how MarkdownText itself has no background). solidEditBackground
+    // lets the user opt out of that solid edit-mode background entirely, so the only visual
+    // cue for which mode is active is the toggle button's own label.
+    val cardBackground = if (previewMode || !solidEditBackground) Color.Transparent else MaterialTheme.colorScheme.background
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -581,7 +585,15 @@ fun NoteDetailScreen(
                     .fillMaxWidth()
                     .background(cardBackground),
                 horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
+                IconButton(onClick = { solidEditBackground = !solidEditBackground }) {
+                    Icon(
+                        Icons.Filled.Contrast,
+                        contentDescription = stringResource(R.string.detail_toggle_edit_background),
+                        tint = if (solidEditBackground) accent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
+                    )
+                }
                 TextButton(onClick = { previewMode = !previewMode }) {
                     Icon(Icons.Filled.Preview, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))

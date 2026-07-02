@@ -30,6 +30,7 @@
     <string name="detail_share">Teilen</string>
     <string name="detail_preview">Vorschau</string>
     <string name="detail_edit">Bearbeiten</string>
+    <string name="detail_toggle_edit_background">Schwarzen Bearbeitungshintergrund umschalten</string>
     <string name="detail_delete_confirm_title">Notiz löschen?</string>
     <string name="detail_delete_confirm_body">Diese Notiz und die zugehörige Sprachaufnahme werden endgültig gelöscht.</string>
     <string name="action_cancel">Abbrechen</string>
