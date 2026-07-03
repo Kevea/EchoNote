@@ -1,5 +1,7 @@
 package com.echonote.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,6 +42,7 @@ import androidx.compose.material.icons.filled.NoteAlt
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.UploadFile
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -120,6 +123,14 @@ fun NoteListScreen(
     var editingFolder by remember { mutableStateOf<Folder?>(null) }
     var showMoveDialog by remember { mutableStateOf(false) }
 
+    val importLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            viewModel.importNote(context, uri) { id -> onNoteClick(id) }
+        }
+    }
+
     // drag-to-reorder state
     var draggingNoteId by remember { mutableStateOf<Long?>(null) }
     var dragPosition by remember { mutableStateOf<Offset?>(null) }
@@ -173,6 +184,10 @@ fun NoteListScreen(
                     },
                     onEditFolder = { editingFolder = it },
                     onNewFolder = { showNewFolderDialog = true },
+                    onImport = {
+                        scope.launch { drawerState.close() }
+                        importLauncher.launch(arrayOf("text/plain", "application/pdf"))
+                    },
                     onSettings = {
                         scope.launch { drawerState.close() }
                         onSettingsClick()
@@ -204,9 +219,13 @@ fun NoteListScreen(
                             IconButton(onClick = {
                                 viewModel.bulkDelete {
                                     scope.launch {
+                                        // showSnackbar defaults duration to Indefinite whenever an
+                                        // actionLabel is set, so without this override the "Notiz
+                                        // gelöscht" snackbar never went away on its own.
                                         val result = snackbarHostState.showSnackbar(
                                             message = context.getString(R.string.note_deleted),
                                             actionLabel = context.getString(R.string.action_undo),
+                                            duration = androidx.compose.material3.SnackbarDuration.Short,
                                         )
                                         if (result == androidx.compose.material3.SnackbarResult.ActionPerformed) {
                                             viewModel.undoDelete()
@@ -354,6 +373,7 @@ private fun DrawerContent(
     onSelectFilter: (FolderFilter) -> Unit,
     onEditFolder: (Folder) -> Unit,
     onNewFolder: () -> Unit,
+    onImport: () -> Unit,
     onSettings: () -> Unit,
     onReorderFolders: (List<Folder>) -> Unit,
 ) {
@@ -490,6 +510,12 @@ private fun DrawerContent(
             onClick = onNewFolder,
         )
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp))
+        DrawerRow(
+            label = stringResource(R.string.list_import_note),
+            icon = { Icon(Icons.Filled.UploadFile, contentDescription = null, modifier = Modifier.size(20.dp)) },
+            selected = false,
+            onClick = onImport,
+        )
         DrawerRow(
             label = "Einstellungen",
             icon = { Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(20.dp)) },

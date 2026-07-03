@@ -7,6 +7,14 @@ import kotlinx.coroutines.flow.asStateFlow
 
 enum class DarkModeOption { SYSTEM, LIGHT, DARK }
 enum class BackgroundStyle { SOLID, GRADIENT, RADIAL, MESH }
+enum class FontSizeOption { SMALL, NORMAL, LARGE, EXTRA_LARGE }
+
+fun FontSizeOption.scale(): Float = when (this) {
+    FontSizeOption.SMALL -> 0.85f
+    FontSizeOption.NORMAL -> 1f
+    FontSizeOption.LARGE -> 1.15f
+    FontSizeOption.EXTRA_LARGE -> 1.3f
+}
 
 data class ThemeSettings(
     val accentColorIndex: Int = 0,
@@ -15,6 +23,9 @@ data class ThemeSettings(
     val colorfulCards: Boolean = true,
     val roundedCards: Boolean = true,
     val backgroundStyle: BackgroundStyle = BackgroundStyle.SOLID,
+    val fontSize: FontSizeOption = FontSizeOption.NORMAL,
+    // null means "use the theme's default text color"
+    val textColorIndex: Int? = null,
 )
 
 class ThemePreferences(context: Context) {
@@ -30,6 +41,8 @@ class ThemePreferences(context: Context) {
         colorfulCards = prefs.getBoolean(KEY_COLORFUL_CARDS, true),
         roundedCards = prefs.getBoolean(KEY_ROUNDED_CARDS, true),
         backgroundStyle = BackgroundStyle.entries.getOrElse(prefs.getInt(KEY_BACKGROUND, 0)) { BackgroundStyle.SOLID },
+        fontSize = FontSizeOption.entries.getOrElse(prefs.getInt(KEY_FONT_SIZE, 1)) { FontSizeOption.NORMAL },
+        textColorIndex = prefs.getInt(KEY_TEXT_COLOR, -1).takeIf { it >= 0 },
     )
 
     fun setAccentColor(index: Int) {
@@ -62,6 +75,16 @@ class ThemePreferences(context: Context) {
         _settings.value = _settings.value.copy(backgroundStyle = style)
     }
 
+    fun setFontSize(option: FontSizeOption) {
+        prefs.edit().putInt(KEY_FONT_SIZE, option.ordinal).apply()
+        _settings.value = _settings.value.copy(fontSize = option)
+    }
+
+    fun setTextColor(index: Int?) {
+        prefs.edit().putInt(KEY_TEXT_COLOR, index ?: -1).apply()
+        _settings.value = _settings.value.copy(textColorIndex = index)
+    }
+
     companion object {
         private const val PREFS_NAME = "echonote_settings"
         private const val KEY_COLOR = "accent_color"
@@ -70,6 +93,8 @@ class ThemePreferences(context: Context) {
         private const val KEY_COLORFUL_CARDS = "colorful_cards"
         private const val KEY_ROUNDED_CARDS = "rounded_cards"
         private const val KEY_BACKGROUND = "background_style"
+        private const val KEY_FONT_SIZE = "font_size"
+        private const val KEY_TEXT_COLOR = "text_color"
 
         @Volatile
         private var instance: ThemePreferences? = null

@@ -77,6 +77,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.echonote.app.EchoNoteApp
 import com.echonote.app.R
 import com.echonote.app.ui.components.MarkdownText
 import com.echonote.app.ui.components.Waveform
@@ -108,6 +109,11 @@ fun NoteDetailScreen(
     val playback by viewModel.player.state.collectAsState()
     val availableFolders by viewModel.availableFolders.collectAsState()
     val context = LocalContext.current
+    val app = context.applicationContext as EchoNoteApp
+    val themeSettings by app.themePreferences.settings.collectAsState()
+    val noteTextColor = themeSettings.textColorIndex
+        ?.let { NoteTagColors.getOrElse(it) { NoteTagColors.first() } }
+        ?: Color.Unspecified
 
     var title by remember { mutableStateOf("") }
     var content by remember { mutableStateOf("") }
@@ -475,6 +481,8 @@ fun NoteDetailScreen(
                         focusedContainerColor = cardBackground,
                         unfocusedIndicatorColor = Color.Transparent,
                         focusedIndicatorColor = Color.Transparent,
+                        unfocusedTextColor = noteTextColor,
+                        focusedTextColor = noteTextColor,
                     ),
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -606,6 +614,7 @@ fun NoteDetailScreen(
             if (previewMode) {
                 MarkdownText(
                     text = content,
+                    textColor = noteTextColor,
                     modifier = Modifier
                         .fillMaxSize()
                         .background(cardBackground)
@@ -624,6 +633,8 @@ fun NoteDetailScreen(
                         focusedContainerColor = cardBackground,
                         unfocusedBorderColor = Color.Transparent,
                         focusedBorderColor = Color.Transparent,
+                        unfocusedTextColor = noteTextColor,
+                        focusedTextColor = noteTextColor,
                     ),
                 )
             }

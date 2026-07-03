@@ -10,6 +10,7 @@
     <string name="empty_subtitle">Tippe auf das Mikrofon und sprich los –\nEchoNote transkribiert live für dich.</string>
     <string name="new_note_fallback_title">Neue Notiz</string>
     <string name="list_write_note">Notiz schreiben</string>
+    <string name="list_import_note">Notiz importieren</string>
 
     <string name="record_tap_to_start">Tippen zum Aufnehmen</string>
     <string name="record_listening">Ich höre zu…</string>

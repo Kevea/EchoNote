@@ -1,13 +1,18 @@
 package com.echonote.app.viewmodel
 
 import android.app.Application
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.echonote.app.EchoNoteApp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
+import com.echonote.app.util.NoteImporter
 import com.echonote.app.util.ReminderScheduler
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -116,6 +121,20 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch {
             val id = repository.save(Note(title = "", content = ""))
             onCreated(id)
+        }
+    }
+
+    fun importNote(context: Context, uri: Uri, onImported: (Long) -> Unit) {
+        viewModelScope.launch {
+            val name = NoteImporter.displayNameOf(context, uri).orEmpty()
+            val isPdf = name.endsWith(".pdf", ignoreCase = true) ||
+                context.contentResolver.getType(uri) == "application/pdf"
+            val content = withContext(Dispatchers.IO) {
+                if (isPdf) NoteImporter.importPdf(context, uri) else NoteImporter.importText(context, uri)
+            }
+            val title = name.substringBeforeLast(".").ifBlank { "Importierte Notiz" }
+            val id = repository.save(Note(title = title, content = content.trim()))
+            onImported(id)
         }
     }
 

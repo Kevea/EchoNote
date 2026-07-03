@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -19,28 +20,31 @@ import androidx.compose.ui.unit.dp
 
 // Minimal Obsidian-style renderer: headers, bullets, **bold**/_italic_ — not full CommonMark.
 @Composable
-fun MarkdownText(text: String, modifier: Modifier = Modifier) {
+fun MarkdownText(text: String, modifier: Modifier = Modifier, textColor: Color = Color.Unspecified) {
     Column(modifier = modifier) {
         text.lines().forEach { line ->
             when {
                 line.startsWith("### ") -> Text(
                     parseInline(line.removePrefix("### ")),
                     style = MaterialTheme.typography.titleMedium,
+                    color = textColor,
                 )
                 line.startsWith("## ") -> Text(
                     parseInline(line.removePrefix("## ")),
                     style = MaterialTheme.typography.titleLarge,
+                    color = textColor,
                 )
                 line.startsWith("# ") -> Text(
                     parseInline(line.removePrefix("# ")),
                     style = MaterialTheme.typography.headlineMedium,
+                    color = textColor,
                 )
                 line.startsWith("- ") || line.startsWith("* ") -> Row(modifier = Modifier.padding(start = 4.dp)) {
-                    Text("•  ", style = MaterialTheme.typography.bodyLarge)
-                    Text(parseInline(line.drop(2)), style = MaterialTheme.typography.bodyLarge)
+                    Text("•  ", style = MaterialTheme.typography.bodyLarge, color = textColor)
+                    Text(parseInline(line.drop(2)), style = MaterialTheme.typography.bodyLarge, color = textColor)
                 }
                 line.isBlank() -> Spacer(modifier = Modifier.height(8.dp))
-                else -> Text(parseInline(line), style = MaterialTheme.typography.bodyLarge)
+                else -> Text(parseInline(line), style = MaterialTheme.typography.bodyLarge, color = textColor)
             }
         }
     }
