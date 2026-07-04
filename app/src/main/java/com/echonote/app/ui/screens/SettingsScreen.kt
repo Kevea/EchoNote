@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.echonote.app.ui.theme.NoteTagColors
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
+import com.echonote.app.util.FontSizeOption
 import com.echonote.app.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -129,6 +131,55 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
+            Text("Schriftfarbe", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(14.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(36.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                        .then(
+                            if (settings.textColorIndex == null) {
+                                Modifier.border(3.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                            } else {
+                                Modifier
+                            }
+                        )
+                        .clickable { viewModel.setTextColor(null) },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Close,
+                        contentDescription = "Standard",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+                NoteTagColors.forEachIndexed { index, color ->
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(color, CircleShape)
+                            .then(
+                                if (index == settings.textColorIndex) {
+                                    Modifier.border(3.dp, MaterialTheme.colorScheme.onBackground, CircleShape)
+                                } else {
+                                    Modifier
+                                }
+                            )
+                            .clickable { viewModel.setTextColor(index) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        if (index == settings.textColorIndex) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = Color.White)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
             Text("Darstellung", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
@@ -208,6 +259,30 @@ fun SettingsScreen(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Schriftgröße", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                FontSizeOption.entries.forEach { option ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setFontSize(option) }
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        RadioButton(
+                            selected = settings.fontSize == option,
+                            onClick = { viewModel.setFontSize(option) },
+                        )
+                        Text(fontSizeLabel(option))
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -224,4 +299,11 @@ private fun backgroundStyleLabel(option: BackgroundStyle): String = when (option
     BackgroundStyle.GRADIENT -> "Farbverlauf"
     BackgroundStyle.RADIAL -> "Radialer Verlauf"
     BackgroundStyle.MESH -> "Mesh (mehrfarbig)"
+}
+
+private fun fontSizeLabel(option: FontSizeOption): String = when (option) {
+    FontSizeOption.SMALL -> "Klein"
+    FontSizeOption.NORMAL -> "Normal"
+    FontSizeOption.LARGE -> "Groß"
+    FontSizeOption.EXTRA_LARGE -> "Sehr groß"
 }

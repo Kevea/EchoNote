@@ -7,6 +7,7 @@ import android.os.Build
 import com.echonote.app.data.NoteRepository
 import com.echonote.app.util.ReminderReceiver
 import com.echonote.app.util.ThemePreferences
+import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
 class EchoNoteApp : Application() {
     val repository: NoteRepository by lazy { NoteRepository.getInstance(this) }
@@ -14,6 +15,7 @@ class EchoNoteApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        PDFBoxResourceLoader.init(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 ReminderReceiver.CHANNEL_ID,

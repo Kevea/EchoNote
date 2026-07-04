@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import com.echonote.app.EchoNoteApp
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
+import com.echonote.app.util.FontSizeOption
 import com.echonote.app.util.ThemeSettings
 import kotlinx.coroutines.flow.StateFlow
 
@@ -25,4 +26,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setRoundedCards(enabled: Boolean) = preferences.setRoundedCards(enabled)
 
     fun setBackgroundStyle(style: BackgroundStyle) = preferences.setBackgroundStyle(style)
+
+    fun setFontSize(option: FontSizeOption) = preferences.setFontSize(option)
+
+    fun setTextColor(index: Int?) = preferences.setTextColor(index)
 }

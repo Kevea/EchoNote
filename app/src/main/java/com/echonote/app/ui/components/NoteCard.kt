@@ -38,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.takeOrElse
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -82,6 +83,8 @@ fun NoteCard(
             MaterialTheme.colorScheme.onSurfaceVariant
         }
     }
+    val noteTextColor = themeSettings.textColorIndex?.let { NoteTagColors.getOrElse(it) { NoteTagColors.first() } }
+        ?: androidx.compose.ui.graphics.Color.Unspecified
     val cornerRadius = if (themeSettings.roundedCards) 20.dp else 6.dp
     val cardShape = RoundedCornerShape(cornerRadius)
     val plainSnippet = remember(note.content) { note.content.stripMarkdown() }
@@ -120,6 +123,7 @@ fun NoteCard(
                             fontWeight = FontWeight.SemiBold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
+                            color = noteTextColor,
                             modifier = Modifier.weight(1f),
                         )
                         if (note.isPinned) {
@@ -179,7 +183,7 @@ fun NoteCard(
                         Text(
                             text = plainSnippet,
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = noteTextColor.takeOrElse { MaterialTheme.colorScheme.onSurfaceVariant },
                             maxLines = 3,
                             overflow = TextOverflow.Ellipsis,
                         )

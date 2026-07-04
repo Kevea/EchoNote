@@ -17,10 +17,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -35,6 +38,7 @@ import com.echonote.app.ui.theme.EchoNoteTheme
 import com.echonote.app.ui.theme.NoteTagColors
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.ThemeSettings
+import com.echonote.app.util.scale
 
 private const val ROUTE_LIST = "list"
 private const val ROUTE_RECORD = "record"
@@ -55,6 +59,7 @@ class MainActivity : ComponentActivity() {
                 val app = LocalContext.current.applicationContext as EchoNoteApp
                 val settings by app.themePreferences.settings.collectAsState()
                 val brush = appBackgroundBrush(settings)
+                val density = LocalDensity.current
                 // Surface keeps its default (opaque, theme-correct) color as the base fill.
                 // The gradient/radial/mesh brush is only ever semi-transparent, so painting it
                 // straight onto a Color.Transparent Surface let the native window background
@@ -63,12 +68,16 @@ class MainActivity : ComponentActivity() {
                 // out dark mode and leaving light-on-light or dark-text-on-dark-background spots.
                 // Layering it on top of the real background in a Box keeps the tint but
                 // guarantees the base underneath always matches colorScheme.background.
-                Surface(modifier = Modifier.fillMaxSize()) {
-                    Box(modifier = Modifier.fillMaxSize()) {
-                        if (brush != null) {
-                            Box(modifier = Modifier.fillMaxSize().background(brush))
+                CompositionLocalProvider(
+                    LocalDensity provides Density(density.density, density.fontScale * settings.fontSize.scale()),
+                ) {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            if (brush != null) {
+                                Box(modifier = Modifier.fillMaxSize().background(brush))
+                            }
+                            EchoNoteNavHost(pendingNoteId, pendingStartRecording)
                         }
-                        EchoNoteNavHost(pendingNoteId, pendingStartRecording)
                     }
                 }
             }
