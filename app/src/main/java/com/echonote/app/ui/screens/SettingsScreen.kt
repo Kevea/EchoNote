@@ -1,5 +1,9 @@
 package com.echonote.app.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,18 +36,23 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.echonote.app.ui.theme.NoteTagColors
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
+import com.echonote.app.util.ExportFormat
 import com.echonote.app.util.FontSizeOption
 import com.echonote.app.viewmodel.SettingsViewModel
 
@@ -53,6 +63,28 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
+    val exportSettings by viewModel.exportSettings.collectAsState()
+    val context = LocalContext.current
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) {
+            exportSettings.folderUri?.let { previous ->
+                runCatching {
+                    context.contentResolver.releasePersistableUriPermission(
+                        Uri.parse(previous),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                }
+            }
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            viewModel.setExportFolder(uri.toString())
+        }
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
@@ -283,6 +315,105 @@ fun SettingsScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Export-Format", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                ExportFormat.entries.forEach { option ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setExportFormat(option) }
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        RadioButton(
+                            selected = exportSettings.format == option,
+                            onClick = { viewModel.setExportFormat(option) },
+                        )
+                        Text(exportFormatLabel(option))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Automatischer Export", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                val folderName = remember(exportSettings.folderUri) {
+                    exportSettings.folderUri
+                        ?.let { runCatching { DocumentFile.fromTreeUri(context, Uri.parse(it)) }.getOrNull()?.name }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        folderName ?: "Kein Ordner ausgewählt",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Button(onClick = { folderPickerLauncher.launch(null) }) {
+                        Text(if (folderName == null) "Ordner auswählen" else "Ordner ändern")
+                    }
+                }
+                if (folderName != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(onClick = {
+                            runCatching {
+                                context.contentResolver.releasePersistableUriPermission(
+                                    Uri.parse(exportSettings.folderUri),
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                                )
+                            }
+                            viewModel.setExportFolder(null)
+                        }) {
+                            Text("Entfernen")
+                        }
+                    }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text("Automatisch exportieren", modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = exportSettings.autoExportEnabled,
+                        enabled = exportSettings.folderUri != null,
+                        onCheckedChange = { viewModel.setAutoExportEnabled(it) },
+                    )
+                }
+            }
+            if (exportSettings.lastExportFailed) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Card(
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                ) {
+                    Text(
+                        "Zugriff auf den Exportordner verloren – bitte Ordner erneut auswählen.",
+                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -306,4 +437,9 @@ private fun fontSizeLabel(option: FontSizeOption): String = when (option) {
     FontSizeOption.NORMAL -> "Normal"
     FontSizeOption.LARGE -> "Groß"
     FontSizeOption.EXTRA_LARGE -> "Sehr groß"
+}
+
+private fun exportFormatLabel(option: ExportFormat): String = when (option) {
+    ExportFormat.MARKDOWN -> "Markdown (.md)"
+    ExportFormat.TEXT -> "Text (.txt)"
 }

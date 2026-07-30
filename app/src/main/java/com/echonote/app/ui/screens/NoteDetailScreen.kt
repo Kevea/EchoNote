@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -560,6 +561,24 @@ fun NoteDetailScreen(
                                     },
                                 )
                             }
+                        }
+                    }
+                    val currentNote = note
+                    if (currentNote != null && "Inbox" !in currentNote.tagList) {
+                        Card(
+                            shape = RoundedCornerShape(50),
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            border = BorderStroke(1.dp, accent.copy(alpha = 0.4f)),
+                            modifier = Modifier.clickable {
+                                viewModel.setTags(currentNote.tagList + "Inbox")
+                            },
+                        ) {
+                            Text(
+                                "+ Inbox",
+                                color = accent,
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            )
                         }
                     }
                 }

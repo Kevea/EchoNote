@@ -26,8 +26,8 @@ Build-/Release-Workflow funktioniert — als Gedächtnisstütze für zukünftige
 ```
 com.echonote.app/
 ├── EchoNoteApp.kt              Application-Klasse: Singletons (repository,
-│                                themePreferences), Notification-Channel-Setup,
-│                                PDFBoxResourceLoader.init()
+│                                themePreferences, exportPreferences),
+│                                Notification-Channel-Setup, PDFBoxResourceLoader.init()
 ├── MainActivity.kt              NavHost-Setup, globaler Hintergrund-Brush,
 │                                CompositionLocalProvider für Schriftgrößen-Skalierung
 ├── data/
@@ -42,11 +42,16 @@ com.echonote.app/
 ├── util/
 │   ├── VoiceCaptureController.kt  Kapselt SpeechRecognizer-Lifecycle (siehe unten)
 │   ├── AudioPlayerController.kt   MediaPlayer-Wrapper für Wiedergabe
-│   ├── NoteExporter.kt            Export als .txt/.md/.pdf (PdfDocument, Bordmittel)
+│   ├── NoteExporter.kt            Export als .txt/.md/.pdf (Share-Sheet, FileProvider) +
+│   │                              exportToFolder() für den Auto-Export in einen
+│   │                              SAF-Zielordner (DocumentFile, siehe unten)
 │   ├── NoteImporter.kt            Import aus .txt/.pdf (pdfbox-android für PDF)
 │   ├── ThemePreferences.kt        SharedPreferences-basierte Theme-Settings
 │   │                              (Akzent-/Grundfarbe, Dark-Mode, Kartenstil,
 │   │                              Hintergrundstil, Schriftgröße, Schriftfarbe)
+│   ├── ExportPreferences.kt       SharedPreferences-basierte Export-Settings
+│   │                              (Format .md/.txt, SAF-Ordner-URI, Auto-Export-
+│   │                              Schalter, Fehlerflag, noteId→Dateiname-Map)
 │   ├── ReminderScheduler.kt       AlarmManager (exact-alarm mit Fallback)
 │   ├── ReminderReceiver.kt        BroadcastReceiver → Notification
 │   ├── BootReceiver.kt            Reminder nach Geräteneustart neu planen
@@ -54,8 +59,9 @@ com.echonote.app/
 ├── viewmodel/
 │   ├── NotesViewModel.kt          Listen-/Ordner-/Filter-/Mehrfachauswahl-Logik
 │   ├── RecordingViewModel.kt      Aufnahme-Flow, generiert Titel aus Transkript
-│   ├── NoteDetailViewModel.kt     Einzel-Notiz: speichern, Tags, Ordner, Reminder
-│   └── SettingsViewModel.kt       Dünner Wrapper um ThemePreferences
+│   ├── NoteDetailViewModel.kt     Einzel-Notiz: speichern, Tags, Ordner, Reminder,
+│   │                              triggert Auto-Export bei Tag-Änderungen
+│   └── SettingsViewModel.kt       Dünner Wrapper um ThemePreferences + ExportPreferences
 ├── ui/
 │   ├── screens/                   NoteListScreen, RecordScreen, NoteDetailScreen,
 │   │                              SettingsScreen
@@ -101,6 +107,20 @@ keine eingebaute PDF-Textextraktion (`PdfRenderer` rastert nur Bitmaps), daher
 `EchoNoteApp.onCreate()`, sonst crasht `PDDocument.load()`). Proguard braucht
 explizite Keep-Regeln für `com.tom_roush.**`, sonst bricht die Release-APK
 durch Minifizierung.
+
+**Auto-Export in Sync-Ordner**: Erste Nutzung von `OpenDocumentTree` +
+`takePersistableUriPermission` im Repo (bisher gab es nur `OpenDocument()` für
+den Notiz-Import, ohne Persistierung) — kein Vorbild für Revoke-Handling war
+vorhanden, daher: `NoteExporter.exportToFolder()` prüft vor jedem Schreiben
+`DocumentFile.fromTreeUri(...).canWrite()` und schlägt sauber mit
+`Result.failure` fehl statt zu crashen, falls der Nutzer den Ordnerzugriff
+extern entzogen hat. Export wird **nicht** beim Speichern einer neuen Notiz
+ausgelöst, sondern bei jeder Tag-Änderung (`NoteDetailViewModel.setTags`) —
+das ist der bewusste Zeitpunkt, an dem der Nutzer die Notiz taggt und damit
+"synct". Der Dateiname pro Notiz wird einmalig erzeugt und in
+`ExportPreferences` (noteId → Dateiname) gemerkt, damit spätere Re-Exports
+dieselbe Datei überschreiben statt Duplikate anzulegen, auch wenn sich der
+Titel zwischenzeitlich ändert.
 
 **Reminders**: `AlarmManager.setExactAndAllowWhileIdle`, mit Fallback auf
 ungenaue `set()`, falls `canScheduleExactAlarms()` false ist oder eine

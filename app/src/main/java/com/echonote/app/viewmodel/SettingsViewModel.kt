@@ -5,6 +5,8 @@ import androidx.lifecycle.AndroidViewModel
 import com.echonote.app.EchoNoteApp
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
+import com.echonote.app.util.ExportFormat
+import com.echonote.app.util.ExportSettings
 import com.echonote.app.util.FontSizeOption
 import com.echonote.app.util.ThemeSettings
 import kotlinx.coroutines.flow.StateFlow
@@ -12,8 +14,10 @@ import kotlinx.coroutines.flow.StateFlow
 class SettingsViewModel(application: Application) : AndroidViewModel(application) {
 
     private val preferences = (application as EchoNoteApp).themePreferences
+    private val exportPreferences = (application as EchoNoteApp).exportPreferences
 
     val settings: StateFlow<ThemeSettings> = preferences.settings
+    val exportSettings: StateFlow<ExportSettings> = exportPreferences.settings
 
     fun setAccentColor(index: Int) = preferences.setAccentColor(index)
 
@@ -30,4 +34,10 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun setFontSize(option: FontSizeOption) = preferences.setFontSize(option)
 
     fun setTextColor(index: Int?) = preferences.setTextColor(index)
+
+    fun setExportFormat(format: ExportFormat) = exportPreferences.setFormat(format)
+
+    fun setExportFolder(uri: String?) = exportPreferences.setFolderUri(uri)
+
+    fun setAutoExportEnabled(enabled: Boolean) = exportPreferences.setAutoExportEnabled(enabled)
 }
