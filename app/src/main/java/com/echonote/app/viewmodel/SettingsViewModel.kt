@@ -10,6 +10,7 @@ import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
 import com.echonote.app.util.ExportFormat
 import com.echonote.app.util.ExportSettings
+import com.echonote.app.util.FolderSyncMode
 import com.echonote.app.util.FontSizeOption
 import com.echonote.app.util.NoteExporter
 import com.echonote.app.util.ReminderScheduler
@@ -25,10 +26,12 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
 
     private val preferences = (application as EchoNoteApp).themePreferences
     private val exportPreferences = (application as EchoNoteApp).exportPreferences
+    private val folderSyncPreferences = (application as EchoNoteApp).folderSyncPreferences
     private val repository = (application as EchoNoteApp).repository
 
     val settings: StateFlow<ThemeSettings> = preferences.settings
     val exportSettings: StateFlow<ExportSettings> = exportPreferences.settings
+    val folderSyncModes: StateFlow<Map<Long, FolderSyncMode>> = folderSyncPreferences.modes
 
     val folders: StateFlow<List<Folder>> = repository.observeFolders()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -62,6 +65,8 @@ class SettingsViewModel(application: Application) : AndroidViewModel(application
     fun clearSyncResultMessage() {
         _syncResultMessage.value = null
     }
+
+    fun setFolderSyncMode(folderId: Long, mode: FolderSyncMode?) = folderSyncPreferences.setMode(folderId, mode)
 
     // A deliberate, per-folder action (not a background trigger): copies or moves every note
     // currently in `folder` into the SAF-picked sync folder. Only notes that exported

@@ -155,6 +155,13 @@ fun NoteDetailScreen(
         }
     }
 
+    // A live folder auto-sync (see FolderAutoSync) can delete this exact note out from under an
+    // open detail screen - e.g. tagging it into a folder with "Verschieben" enabled. Leave rather
+    // than show a screen with no backing note.
+    LaunchedEffect(initialized, note) {
+        if (initialized && note == null) onBack()
+    }
+
     LaunchedEffect(title, content, initialized) {
         if (!initialized) return@LaunchedEffect
         delay(500)

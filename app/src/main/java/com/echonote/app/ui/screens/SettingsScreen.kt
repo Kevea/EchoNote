@@ -32,6 +32,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,6 +64,7 @@ import com.echonote.app.ui.theme.NoteTagColors
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
 import com.echonote.app.util.ExportFormat
+import com.echonote.app.util.FolderSyncMode
 import com.echonote.app.util.FontSizeOption
 import com.echonote.app.viewmodel.SettingsViewModel
 
@@ -77,6 +79,7 @@ fun SettingsScreen(
     val folders by viewModel.folders.collectAsState()
     val syncingFolderIds by viewModel.syncingFolderIds.collectAsState()
     val syncResultMessage by viewModel.syncResultMessage.collectAsState()
+    val folderSyncModes by viewModel.folderSyncModes.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingSyncFolder by remember { mutableStateOf<Folder?>(null) }
@@ -458,30 +461,64 @@ fun SettingsScreen(
                     }
                     folders.forEach { folder ->
                         val isSyncing = folder.id in syncingFolderIds
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        val autoMode = folderSyncModes[folder.id]
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = 16.dp, vertical = 8.dp),
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(10.dp)
-                                    .background(
-                                        NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() },
-                                        CircleShape,
-                                    )
-                            )
-                            Spacer(modifier = Modifier.width(10.dp))
-                            Text(folder.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-                            if (isSyncing) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                            } else {
-                                TextButton(
-                                    onClick = { pendingSyncFolder = folder },
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .background(
+                                            NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() },
+                                            CircleShape,
+                                        )
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(folder.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                if (isSyncing) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                } else {
+                                    TextButton(
+                                        onClick = { pendingSyncFolder = folder },
+                                        enabled = exportSettings.folderUri != null,
+                                    ) {
+                                        Text("Sync")
+                                    }
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    "Automatisch synchronisieren",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = autoMode != null,
                                     enabled = exportSettings.folderUri != null,
-                                ) {
-                                    Text("Sync")
+                                    onCheckedChange = { enabled ->
+                                        viewModel.setFolderSyncMode(
+                                            folder.id,
+                                            if (enabled) FolderSyncMode.MOVE else null,
+                                        )
+                                    },
+                                )
+                            }
+                            if (autoMode != null) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    FilterChip(
+                                        selected = autoMode == FolderSyncMode.MOVE,
+                                        onClick = { viewModel.setFolderSyncMode(folder.id, FolderSyncMode.MOVE) },
+                                        label = { Text("Verschieben") },
+                                    )
+                                    FilterChip(
+                                        selected = autoMode == FolderSyncMode.COPY,
+                                        onClick = { viewModel.setFolderSyncMode(folder.id, FolderSyncMode.COPY) },
+                                        label = { Text("Kopieren") },
+                                    )
                                 }
                             }
                         }

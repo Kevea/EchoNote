@@ -7,6 +7,7 @@ import com.echonote.app.EchoNoteApp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
 import com.echonote.app.util.AudioPlayerController
+import com.echonote.app.util.FolderAutoSync
 import com.echonote.app.util.ReminderScheduler
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -17,6 +18,8 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
 
     private val repository = (application as EchoNoteApp).repository
     private val tagColorPreferences = (application as EchoNoteApp).tagColorPreferences
+    private val exportPreferences = (application as EchoNoteApp).exportPreferences
+    private val folderSyncPreferences = (application as EchoNoteApp).folderSyncPreferences
     val player = AudioPlayerController()
 
     val note: StateFlow<Note?> = repository.observeById(noteId)
@@ -51,13 +54,19 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
             val folderId = newTag?.let {
                 repository.findOrCreateFolderForTag(it, tagColorPreferences.colorIndexFor(it))
             } ?: current.folderId
-            repository.update(current.copy(tags = tags.joinToString(","), folderId = folderId))
+            val updated = current.copy(tags = tags.joinToString(","), folderId = folderId)
+            repository.update(updated)
+            FolderAutoSync.syncIfEnabled(getApplication(), repository, exportPreferences, folderSyncPreferences, updated)
         }
     }
 
     fun setFolder(folderId: Long?) {
         val current = note.value ?: return
-        viewModelScope.launch { repository.update(current.copy(folderId = folderId)) }
+        val updated = current.copy(folderId = folderId)
+        viewModelScope.launch {
+            repository.update(updated)
+            FolderAutoSync.syncIfEnabled(getApplication(), repository, exportPreferences, folderSyncPreferences, updated)
+        }
     }
 
     fun createAndSetFolder(name: String, colorIndex: Int) {

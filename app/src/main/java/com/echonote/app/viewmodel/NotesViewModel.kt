@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.echonote.app.EchoNoteApp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
+import com.echonote.app.util.FolderAutoSync
 import com.echonote.app.util.NoteImporter
 import com.echonote.app.util.ReminderScheduler
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +34,8 @@ sealed class FolderFilter {
 class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     private val repository = (application as EchoNoteApp).repository
+    private val exportPreferences = (application as EchoNoteApp).exportPreferences
+    private val folderSyncPreferences = (application as EchoNoteApp).folderSyncPreferences
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
@@ -111,6 +114,9 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     fun deleteFolder(folder: Folder) {
         viewModelScope.launch {
             repository.deleteFolder(folder)
+            // Without this, a later folder that happens to reuse this rowid (SQLite reuses ids
+            // after the table is fully emptied) would silently inherit a stale sync mode.
+            folderSyncPreferences.setMode(folder.id, null)
             if (_folderFilter.value == FolderFilter.Specific(folder.id)) {
                 _folderFilter.value = FolderFilter.Unfiled
             }
@@ -163,7 +169,11 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun moveNote(note: Note, folderId: Long?) {
-        viewModelScope.launch { repository.update(note.copy(folderId = folderId)) }
+        val updated = note.copy(folderId = folderId)
+        viewModelScope.launch {
+            repository.update(updated)
+            FolderAutoSync.syncIfEnabled(getApplication(), repository, exportPreferences, folderSyncPreferences, updated)
+        }
     }
 
     fun reorderNotes(orderedNotes: List<Note>) {
@@ -218,8 +228,13 @@ class NotesViewModel(application: Application) : AndroidViewModel(application) {
 
     fun bulkMove(folderId: Long?) {
         val ids = _selectedIds.value
+        val toMove = notes.value.filter { it.id in ids }
         viewModelScope.launch {
-            notes.value.filter { it.id in ids }.forEach { repository.update(it.copy(folderId = folderId)) }
+            toMove.forEach { note ->
+                val updated = note.copy(folderId = folderId)
+                repository.update(updated)
+                FolderAutoSync.syncIfEnabled(getApplication(), repository, exportPreferences, folderSyncPreferences, updated)
+            }
             clearSelection()
         }
     }
