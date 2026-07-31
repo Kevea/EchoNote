@@ -43,4 +43,7 @@ interface NoteDao {
 
     @Query("SELECT * FROM notes WHERE reminderAt IS NOT NULL")
     suspend fun getNotesWithReminders(): List<Note>
+
+    @Query("SELECT * FROM notes WHERE folderId = :folderId")
+    suspend fun getByFolder(folderId: Long): List<Note>
 }

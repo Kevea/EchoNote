@@ -27,9 +27,6 @@ data class ExportSettings(
     val format: ExportFormat = ExportFormat.MARKDOWN,
     // SAF tree Uri.toString(), null = not picked
     val folderUri: String? = null,
-    val autoExportEnabled: Boolean = false,
-    // surfaced as a warning banner in Settings when the last background export failed
-    val lastExportFailed: Boolean = false,
 )
 
 class ExportPreferences(context: Context) {
@@ -41,8 +38,6 @@ class ExportPreferences(context: Context) {
     private fun load(): ExportSettings = ExportSettings(
         format = ExportFormat.entries.getOrElse(prefs.getInt(KEY_FORMAT, 0)) { ExportFormat.MARKDOWN },
         folderUri = prefs.getString(KEY_FOLDER_URI, null),
-        autoExportEnabled = prefs.getBoolean(KEY_AUTO_EXPORT, false),
-        lastExportFailed = prefs.getBoolean(KEY_LAST_FAILED, false),
     )
 
     fun setFormat(format: ExportFormat) {
@@ -50,26 +45,9 @@ class ExportPreferences(context: Context) {
         _settings.value = _settings.value.copy(format = format)
     }
 
-    // Picking a folder implicitly (re-)enables auto-export; clearing it disables auto-export too,
-    // since the toggle is meaningless (and disabled in the UI) without a folder.
     fun setFolderUri(uri: String?) {
-        val autoExport = uri != null
-        prefs.edit()
-            .putString(KEY_FOLDER_URI, uri)
-            .putBoolean(KEY_AUTO_EXPORT, autoExport)
-            .apply()
-        _settings.value = _settings.value.copy(folderUri = uri, autoExportEnabled = autoExport)
-    }
-
-    fun setAutoExportEnabled(enabled: Boolean) {
-        prefs.edit().putBoolean(KEY_AUTO_EXPORT, enabled).apply()
-        _settings.value = _settings.value.copy(autoExportEnabled = enabled)
-    }
-
-    fun setLastExportFailed(failed: Boolean) {
-        if (_settings.value.lastExportFailed == failed) return
-        prefs.edit().putBoolean(KEY_LAST_FAILED, failed).apply()
-        _settings.value = _settings.value.copy(lastExportFailed = failed)
+        prefs.edit().putString(KEY_FOLDER_URI, uri).apply()
+        _settings.value = _settings.value.copy(folderUri = uri)
     }
 
     // Resolves the file name to (re-)export a note under: stable per note id, so repeated
@@ -89,8 +67,6 @@ class ExportPreferences(context: Context) {
         private const val PREFS_NAME = "echonote_export_settings"
         private const val KEY_FORMAT = "format"
         private const val KEY_FOLDER_URI = "folder_uri"
-        private const val KEY_AUTO_EXPORT = "auto_export_enabled"
-        private const val KEY_LAST_FAILED = "last_export_failed"
         private val FILE_TIMESTAMP_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss")
 
         @Volatile

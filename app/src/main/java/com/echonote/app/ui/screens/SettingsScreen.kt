@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -25,23 +26,31 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +58,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.echonote.app.data.Folder
 import com.echonote.app.ui.theme.NoteTagColors
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
@@ -64,7 +74,19 @@ fun SettingsScreen(
 ) {
     val settings by viewModel.settings.collectAsState()
     val exportSettings by viewModel.exportSettings.collectAsState()
+    val folders by viewModel.folders.collectAsState()
+    val syncingFolderIds by viewModel.syncingFolderIds.collectAsState()
+    val syncResultMessage by viewModel.syncResultMessage.collectAsState()
     val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    var pendingSyncFolder by remember { mutableStateOf<Folder?>(null) }
+
+    LaunchedEffect(syncResultMessage) {
+        syncResultMessage?.let {
+            snackbarHostState.showSnackbar(it, duration = SnackbarDuration.Short)
+            viewModel.clearSyncResultMessage()
+        }
+    }
 
     val folderPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree(),
@@ -86,8 +108,32 @@ fun SettingsScreen(
         }
     }
 
+    pendingSyncFolder?.let { folder ->
+        AlertDialog(
+            onDismissRequest = { pendingSyncFolder = null },
+            title = { Text("Ordner synchronisieren") },
+            text = { Text("Notizen aus \"${folder.name}\" in den Zielordner kopieren oder verschieben?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.syncFolder(folder, move = false)
+                    pendingSyncFolder = null
+                }) { Text("Nur kopieren") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        viewModel.syncFolder(folder, move = true)
+                        pendingSyncFolder = null
+                    }) { Text("Verschieben") }
+                    TextButton(onClick = { pendingSyncFolder = null }) { Text("Abbrechen") }
+                }
+            },
+        )
+    }
+
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Einstellungen") },
@@ -341,7 +387,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Automatischer Export", style = MaterialTheme.typography.titleMedium)
+            Text("Export-Ordner", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -386,32 +432,60 @@ fun SettingsScreen(
                         }
                     }
                 }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
-                ) {
-                    Text("Automatisch exportieren", modifier = Modifier.weight(1f))
-                    Switch(
-                        checked = exportSettings.autoExportEnabled,
-                        enabled = exportSettings.folderUri != null,
-                        onCheckedChange = { viewModel.setAutoExportEnabled(it) },
-                    )
-                }
             }
-            if (exportSettings.lastExportFailed) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                ) {
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Ordner synchronisieren", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                if (folders.isEmpty()) {
                     Text(
-                        "Zugriff auf den Exportordner verloren – bitte Ordner erneut auswählen.",
-                        color = MaterialTheme.colorScheme.onErrorContainer,
+                        "Noch keine Ordner vorhanden.",
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(16.dp),
                     )
+                } else {
+                    if (exportSettings.folderUri == null) {
+                        Text(
+                            "Wähle oben einen Zielordner, um synchronisieren zu können.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    }
+                    folders.forEach { folder ->
+                        val isSyncing = folder.id in syncingFolderIds
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(10.dp)
+                                    .background(
+                                        NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() },
+                                        CircleShape,
+                                    )
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(folder.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                            if (isSyncing) {
+                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                            } else {
+                                TextButton(
+                                    onClick = { pendingSyncFolder = folder },
+                                    enabled = exportSettings.folderUri != null,
+                                ) {
+                                    Text("Sync")
+                                }
+                            }
+                        }
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(32.dp))

@@ -71,6 +71,7 @@ fun NoteCard(
 ) {
     val app = LocalContext.current.applicationContext as EchoNoteApp
     val themeSettings by app.themePreferences.settings.collectAsState()
+    val tagColorPreferences = app.tagColorPreferences
     val accent = if (themeSettings.colorfulCards) {
         NoteTagColors.getOrElse(note.colorTag) { NoteTagColors.first() }
     } else {
@@ -223,15 +224,20 @@ fun NoteCard(
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             note.tagList.take(3).forEach { tag ->
+                                val tagColor = if (themeSettings.colorfulCards) {
+                                    NoteTagColors[tagColorPreferences.colorIndexFor(tag)]
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
                                 Box(
                                     modifier = Modifier
-                                        .background(accent.copy(alpha = 0.12f), RoundedCornerShape(50))
+                                        .background(tagColor.copy(alpha = 0.12f), RoundedCornerShape(50))
                                         .padding(horizontal = 8.dp, vertical = 3.dp)
                                 ) {
                                     Text(
                                         text = tag,
                                         style = MaterialTheme.typography.labelMedium,
-                                        color = accent,
+                                        color = tagColor,
                                     )
                                 }
                             }

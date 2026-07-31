@@ -7,6 +7,7 @@ import android.os.Build
 import com.echonote.app.data.NoteRepository
 import com.echonote.app.util.ExportPreferences
 import com.echonote.app.util.ReminderReceiver
+import com.echonote.app.util.TagColorPreferences
 import com.echonote.app.util.ThemePreferences
 import com.tom_roush.pdfbox.android.PDFBoxResourceLoader
 
@@ -14,6 +15,7 @@ class EchoNoteApp : Application() {
     val repository: NoteRepository by lazy { NoteRepository.getInstance(this) }
     val themePreferences: ThemePreferences by lazy { ThemePreferences.getInstance(this) }
     val exportPreferences: ExportPreferences by lazy { ExportPreferences.getInstance(this) }
+    val tagColorPreferences: TagColorPreferences by lazy { TagColorPreferences.getInstance(this) }
 
     override fun onCreate() {
         super.onCreate()

@@ -1,16 +1,13 @@
 package com.echonote.app.viewmodel
 
 import android.app.Application
-import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.echonote.app.EchoNoteApp
 import com.echonote.app.data.Folder
 import com.echonote.app.data.Note
 import com.echonote.app.util.AudioPlayerController
-import com.echonote.app.util.NoteExporter
 import com.echonote.app.util.ReminderScheduler
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
@@ -19,7 +16,7 @@ import kotlinx.coroutines.launch
 class NoteDetailViewModel(application: Application, private val noteId: Long) : AndroidViewModel(application) {
 
     private val repository = (application as EchoNoteApp).repository
-    private val exportPreferences = (application as EchoNoteApp).exportPreferences
+    private val tagColorPreferences = (application as EchoNoteApp).tagColorPreferences
     val player = AudioPlayerController()
 
     val note: StateFlow<Note?> = repository.observeById(noteId)
@@ -44,28 +41,17 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
         viewModelScope.launch { repository.update(current.copy(colorTag = colorIndex)) }
     }
 
+    // Setting tags also moves the note into a matching folder: the newest tag (last one added)
+    // wins and determines the folder, so tagging with a second tag moves the note again rather
+    // than leaving it in the first tag's folder.
     fun setTags(tags: List<String>) {
         val current = note.value ?: return
-        val updated = current.copy(tags = tags.joinToString(","))
+        val newTag = tags.filterNot { it in current.tagList }.lastOrNull()
         viewModelScope.launch {
-            repository.update(updated)
-            triggerAutoExport(updated)
-        }
-    }
-
-    // Fire-and-forget: a tag edit is the deliberate "sync this now" signal (see plan), but export
-    // failures must never surface as a crash or block the tag edit itself - only the Settings
-    // warning banner (driven by exportPreferences.lastExportFailed) reports failure.
-    private fun triggerAutoExport(note: Note) {
-        val export = exportPreferences.settings.value
-        val folderUri = export.folderUri
-        if (!export.autoExportEnabled || folderUri == null) return
-        viewModelScope.launch(Dispatchers.IO) {
-            val fileName = exportPreferences.resolveExportFileName(note, export.format)
-            val result = NoteExporter.exportToFolder(
-                getApplication(), note, Uri.parse(folderUri), export.format, fileName,
-            )
-            exportPreferences.setLastExportFailed(result.isFailure)
+            val folderId = newTag?.let {
+                repository.findOrCreateFolderForTag(it, tagColorPreferences.colorIndexFor(it))
+            } ?: current.folderId
+            repository.update(current.copy(tags = tags.joinToString(","), folderId = folderId))
         }
     }
 

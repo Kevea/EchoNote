@@ -14,6 +14,9 @@ interface FolderDao {
     @Query("SELECT * FROM folders ORDER BY sortOrder ASC")
     fun observeAll(): Flow<List<Folder>>
 
+    @Query("SELECT * FROM folders WHERE name = :name LIMIT 1")
+    suspend fun findByName(name: String): Folder?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insert(folder: Folder): Long
 

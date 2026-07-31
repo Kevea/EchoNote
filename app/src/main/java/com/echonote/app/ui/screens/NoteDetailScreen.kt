@@ -112,6 +112,7 @@ fun NoteDetailScreen(
     val context = LocalContext.current
     val app = context.applicationContext as EchoNoteApp
     val themeSettings by app.themePreferences.settings.collectAsState()
+    val tagColorPreferences = app.tagColorPreferences
     val noteTextColor = themeSettings.textColorIndex
         ?.let { NoteTagColors.getOrElse(it) { NoteTagColors.first() } }
         ?: Color.Unspecified
@@ -543,19 +544,20 @@ fun NoteDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     (note?.tagList ?: emptyList()).forEach { tag ->
+                        val tagColor = NoteTagColors[tagColorPreferences.colorIndexFor(tag)]
                         Card(
                             shape = RoundedCornerShape(50),
-                            colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = 0.12f)),
+                            colors = CardDefaults.cardColors(containerColor = tagColor.copy(alpha = 0.12f)),
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             ) {
-                                Text(tag, color = accent, style = MaterialTheme.typography.labelMedium)
+                                Text(tag, color = tagColor, style = MaterialTheme.typography.labelMedium)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     "×",
-                                    color = accent,
+                                    color = tagColor,
                                     modifier = Modifier.clickable {
                                         viewModel.setTags((note?.tagList ?: emptyList()) - tag)
                                     },
