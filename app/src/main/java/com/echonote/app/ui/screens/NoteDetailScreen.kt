@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -111,6 +112,7 @@ fun NoteDetailScreen(
     val context = LocalContext.current
     val app = context.applicationContext as EchoNoteApp
     val themeSettings by app.themePreferences.settings.collectAsState()
+    val tagColorPreferences = app.tagColorPreferences
     val noteTextColor = themeSettings.textColorIndex
         ?.let { NoteTagColors.getOrElse(it) { NoteTagColors.first() } }
         ?: Color.Unspecified
@@ -151,6 +153,13 @@ fun NoteDetailScreen(
             content = current.content
             initialized = true
         }
+    }
+
+    // A live folder auto-sync (see FolderAutoSync) can delete this exact note out from under an
+    // open detail screen - e.g. tagging it into a folder with "Verschieben" enabled. Leave rather
+    // than show a screen with no backing note.
+    LaunchedEffect(initialized, note) {
+        if (initialized && note == null) onBack()
     }
 
     LaunchedEffect(title, content, initialized) {
@@ -542,24 +551,43 @@ fun NoteDetailScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     (note?.tagList ?: emptyList()).forEach { tag ->
+                        val tagColor = NoteTagColors[tagColorPreferences.colorIndexFor(tag)]
                         Card(
                             shape = RoundedCornerShape(50),
-                            colors = CardDefaults.cardColors(containerColor = accent.copy(alpha = 0.12f)),
+                            colors = CardDefaults.cardColors(containerColor = tagColor.copy(alpha = 0.12f)),
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                             ) {
-                                Text(tag, color = accent, style = MaterialTheme.typography.labelMedium)
+                                Text(tag, color = tagColor, style = MaterialTheme.typography.labelMedium)
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
                                     "×",
-                                    color = accent,
+                                    color = tagColor,
                                     modifier = Modifier.clickable {
                                         viewModel.setTags((note?.tagList ?: emptyList()) - tag)
                                     },
                                 )
                             }
+                        }
+                    }
+                    val currentNote = note
+                    if (currentNote != null && "Inbox" !in currentNote.tagList) {
+                        Card(
+                            shape = RoundedCornerShape(50),
+                            colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                            border = BorderStroke(1.dp, accent.copy(alpha = 0.4f)),
+                            modifier = Modifier.clickable {
+                                viewModel.setTags(currentNote.tagList + "Inbox")
+                            },
+                        ) {
+                            Text(
+                                "+ Inbox",
+                                color = accent,
+                                style = MaterialTheme.typography.labelMedium,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                            )
                         }
                     }
                 }

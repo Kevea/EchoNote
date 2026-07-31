@@ -1,5 +1,9 @@
 package com.echonote.app.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.CircleShape
@@ -21,28 +26,45 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.echonote.app.data.Folder
 import com.echonote.app.ui.theme.NoteTagColors
 import com.echonote.app.util.BackgroundStyle
 import com.echonote.app.util.DarkModeOption
+import com.echonote.app.util.ExportFormat
+import com.echonote.app.util.FolderSyncMode
 import com.echonote.app.util.FontSizeOption
 import com.echonote.app.viewmodel.SettingsViewModel
 
@@ -53,9 +75,68 @@ fun SettingsScreen(
     viewModel: SettingsViewModel = viewModel(),
 ) {
     val settings by viewModel.settings.collectAsState()
+    val exportSettings by viewModel.exportSettings.collectAsState()
+    val folders by viewModel.folders.collectAsState()
+    val syncingFolderIds by viewModel.syncingFolderIds.collectAsState()
+    val syncResultMessage by viewModel.syncResultMessage.collectAsState()
+    val folderSyncModes by viewModel.folderSyncModes.collectAsState()
+    val context = LocalContext.current
+    val snackbarHostState = remember { SnackbarHostState() }
+    var pendingSyncFolder by remember { mutableStateOf<Folder?>(null) }
+
+    LaunchedEffect(syncResultMessage) {
+        syncResultMessage?.let {
+            snackbarHostState.showSnackbar(it, duration = SnackbarDuration.Short)
+            viewModel.clearSyncResultMessage()
+        }
+    }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri != null) {
+            exportSettings.folderUri?.let { previous ->
+                runCatching {
+                    context.contentResolver.releasePersistableUriPermission(
+                        Uri.parse(previous),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                }
+            }
+            context.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+            )
+            viewModel.setExportFolder(uri.toString())
+        }
+    }
+
+    pendingSyncFolder?.let { folder ->
+        AlertDialog(
+            onDismissRequest = { pendingSyncFolder = null },
+            title = { Text("Ordner synchronisieren") },
+            text = { Text("Notizen aus \"${folder.name}\" in den Zielordner kopieren oder verschieben?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.syncFolder(folder, move = false)
+                    pendingSyncFolder = null
+                }) { Text("Nur kopieren") }
+            },
+            dismissButton = {
+                Row {
+                    TextButton(onClick = {
+                        viewModel.syncFolder(folder, move = true)
+                        pendingSyncFolder = null
+                    }) { Text("Verschieben") }
+                    TextButton(onClick = { pendingSyncFolder = null }) { Text("Abbrechen") }
+                }
+            },
+        )
+    }
 
     Scaffold(
         containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Einstellungen") },
@@ -283,6 +364,167 @@ fun SettingsScreen(
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Export-Format", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                ExportFormat.entries.forEach { option ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { viewModel.setExportFormat(option) }
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        RadioButton(
+                            selected = exportSettings.format == option,
+                            onClick = { viewModel.setExportFormat(option) },
+                        )
+                        Text(exportFormatLabel(option))
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Export-Ordner", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                val folderName = remember(exportSettings.folderUri) {
+                    exportSettings.folderUri
+                        ?.let { runCatching { DocumentFile.fromTreeUri(context, Uri.parse(it)) }.getOrNull()?.name }
+                }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                ) {
+                    Text(
+                        folderName ?: "Kein Ordner ausgewählt",
+                        modifier = Modifier.weight(1f),
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    Button(onClick = { folderPickerLauncher.launch(null) }) {
+                        Text(if (folderName == null) "Ordner auswählen" else "Ordner ändern")
+                    }
+                }
+                if (folderName != null) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.End,
+                    ) {
+                        TextButton(onClick = {
+                            runCatching {
+                                context.contentResolver.releasePersistableUriPermission(
+                                    Uri.parse(exportSettings.folderUri),
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                                )
+                            }
+                            viewModel.setExportFolder(null)
+                        }) {
+                            Text("Entfernen")
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+            Text("Ordner synchronisieren", style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                if (folders.isEmpty()) {
+                    Text(
+                        "Noch keine Ordner vorhanden.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                } else {
+                    if (exportSettings.folderUri == null) {
+                        Text(
+                            "Wähle oben einen Zielordner, um synchronisieren zu können.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        )
+                    }
+                    folders.forEach { folder ->
+                        val isSyncing = folder.id in syncingFolderIds
+                        val autoMode = folderSyncModes[folder.id]
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 8.dp),
+                        ) {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(10.dp)
+                                        .background(
+                                            NoteTagColors.getOrElse(folder.colorIndex) { NoteTagColors.first() },
+                                            CircleShape,
+                                        )
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(folder.name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
+                                if (isSyncing) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                } else {
+                                    TextButton(
+                                        onClick = { pendingSyncFolder = folder },
+                                        enabled = exportSettings.folderUri != null,
+                                    ) {
+                                        Text("Sync")
+                                    }
+                                }
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    "Automatisch synchronisieren",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Switch(
+                                    checked = autoMode != null,
+                                    enabled = exportSettings.folderUri != null,
+                                    onCheckedChange = { enabled ->
+                                        viewModel.setFolderSyncMode(
+                                            folder.id,
+                                            if (enabled) FolderSyncMode.MOVE else null,
+                                        )
+                                    },
+                                )
+                            }
+                            if (autoMode != null) {
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    FilterChip(
+                                        selected = autoMode == FolderSyncMode.MOVE,
+                                        onClick = { viewModel.setFolderSyncMode(folder.id, FolderSyncMode.MOVE) },
+                                        label = { Text("Verschieben") },
+                                    )
+                                    FilterChip(
+                                        selected = autoMode == FolderSyncMode.COPY,
+                                        onClick = { viewModel.setFolderSyncMode(folder.id, FolderSyncMode.COPY) },
+                                        label = { Text("Kopieren") },
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
@@ -306,4 +548,9 @@ private fun fontSizeLabel(option: FontSizeOption): String = when (option) {
     FontSizeOption.NORMAL -> "Normal"
     FontSizeOption.LARGE -> "Groß"
     FontSizeOption.EXTRA_LARGE -> "Sehr groß"
+}
+
+private fun exportFormatLabel(option: ExportFormat): String = when (option) {
+    ExportFormat.MARKDOWN -> "Markdown (.md)"
+    ExportFormat.TEXT -> "Text (.txt)"
 }

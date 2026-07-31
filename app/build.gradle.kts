@@ -13,8 +13,8 @@ android {
         applicationId = "com.echonote.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 13
-        versionName = "1.13"
+        versionCode = 14
+        versionName = "1.14"
 
         vectorDrawables {
             useSupportLibrary = true
@@ -83,6 +83,9 @@ dependencies {
 
     // Offline PDF text extraction for note import - Android has no built-in API for this.
     implementation("com.tom-roush:pdfbox-android:2.0.27.0")
+
+    // DocumentFile wrapper for writing into a user-picked SAF folder (auto-export).
+    implementation("androidx.documentfile:documentfile:1.0.1")
 
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

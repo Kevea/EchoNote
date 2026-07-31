@@ -50,6 +50,16 @@ class NoteRepository(
         dao.getNotesWithReminders()
     }
 
+    // First-write-wins: an existing folder's color is never changed here, consistent with
+    // TagColorPreferences.colorIndexFor also only assigning a color the first time it's seen.
+    suspend fun findOrCreateFolderForTag(name: String, colorIndex: Int): Long = withContext(Dispatchers.IO) {
+        folderDao.findByName(name)?.id ?: folderDao.insert(Folder(name = name, colorIndex = colorIndex))
+    }
+
+    suspend fun getNotesInFolder(folderId: Long): List<Note> = withContext(Dispatchers.IO) {
+        dao.getByFolder(folderId)
+    }
+
     companion object {
         @Volatile
         private var instance: NoteRepository? = null
