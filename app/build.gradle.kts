@@ -70,6 +70,11 @@ android {
 
     buildTypes {
         release {
+            // app_name kommt bewusst pro Build-Typ und nicht aus strings.xml:
+            // Sonst heisst der Debug-Build in der App-Liste ebenfalls
+            // "Plainvoice" und installiert sich wegen der abweichenden
+            // applicationId unbemerkt daneben statt darueber.
+            resValue("string", "app_name", "Plainvoice")
             if (keystorePath != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -82,6 +87,7 @@ android {
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
+            resValue("string", "app_name", "Plainvoice (Debug)")
         }
     }
 
