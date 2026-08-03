@@ -21,8 +21,27 @@ android {
         }
     }
 
+    // Signierung wird ausschliesslich ueber Umgebungsvariablen gefuettert (CI).
+    // Fehlt KEYSTORE_PATH - etwa bei einem lokalen Build - laeuft assembleRelease
+    // weiterhin durch und erzeugt ein unsigniertes Artefakt, statt abzubrechen.
+    val keystorePath: String? = System.getenv("KEYSTORE_PATH")
+
+    signingConfigs {
+        if (keystorePath != null) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS")
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            if (keystorePath != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
