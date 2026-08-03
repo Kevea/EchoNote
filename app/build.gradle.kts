@@ -105,6 +105,12 @@ android {
     }
 }
 
+// Room exportiert das Schema nach app/schemas. Die Dateien gehoeren ins Repo:
+// ohne sie kann Room kuenftige Migrationen nicht gegenpruefen.
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     val composeBom = platform("androidx.compose:compose-bom:2024.10.01")
     implementation(composeBom)
