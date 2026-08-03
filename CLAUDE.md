@@ -192,6 +192,15 @@ fehlten der Kopie die letzten Transaktionen.
 
 ## Bekannte, bereits gelöste Stolpersteine (nicht wiederholen)
 
+- In `Application.attachBaseContext` ist `applicationContext` **null** —
+  `super.attachBaseContext()` lief dort noch nicht. Ein Zugriff darauf (etwa
+  für `getSharedPreferences`) lässt die App beim Start abstürzen, noch bevor
+  Oberfläche erscheint. Der übergebene `base`-Context genügt; SharedPreferences
+  zeigen prozessweit auf dieselbe Datei.
+- **Der CI-Build fängt Startfehler nicht ab** — er kompiliert nur. Alles, was in
+  `attachBaseContext`, `Application.onCreate` oder der Room-Initialisierung
+  schiefgehen kann, zeigt sich ausschliesslich auf dem Gerät. Nach Eingriffen an
+  diesen Stellen immer eine echte Installation testen.
 - Material3 `showSnackbar()` setzt `duration` implizit auf `Indefinite`,
   sobald ein `actionLabel` gesetzt ist — für "kurze" Snackbars immer explizit
   `duration = SnackbarDuration.Short` übergeben.
