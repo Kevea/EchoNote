@@ -122,22 +122,7 @@ jobs:
             app/build/outputs/bundle/release/*.aab
           if-no-files-found: error
 
-      - name: Create GitHub Release (tag push)
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/bundle/release/*.aab
-          generate_release_notes: true
-
-      - name: Create GitHub Release (manual dispatch)
-        if: github.event_name == 'workflow_dispatch' && inputs.release_version != ''
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ inputs.release_version }}
-          target_commitish: ${{ github.sha }}
-          files: |
-            app/build/outputs/apk/release/*.apk
-            app/build/outputs/bundle/release/*.aab
-          generate_release_notes: true
+      # Bewusst KEIN GitHub-Release: Die fertige App wird ueber Gumroad
+      # verkauft. Bliebe hier ein Release mit angehaengter APK stehen, waere
+      # das Produkt zwei Klicks vom oeffentlichen Repo entfernt gratis zu haben.
+      # Die Artefakte oben genuegen, um den Build selbst herunterzuladen.
