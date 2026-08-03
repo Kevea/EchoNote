@@ -146,4 +146,5 @@
     <string name="reminder_notification_title">Note reminder</string>
     <string name="reminder_tap_to_open">Tap to open the note</string>
     <string name="notification_channel_reminders">Reminders</string>
+    <string name="settings_check_updates">Check for updates</string>
 </resources>

@@ -32,8 +32,9 @@ cover.
   (gradient, radial, mesh), card style, light/dark/system, font size and an
   optional custom text colour
 
-The version and commit are shown at the bottom of Settings; tapping them opens
-the [releases page](../../releases).
+The version and commit are shown at the bottom of Settings, next to a link to
+the store — the app has no network access, so it cannot check for updates
+itself. That is the trade the missing `INTERNET` permission buys you.
 
 ## Getting notes into Obsidian
 

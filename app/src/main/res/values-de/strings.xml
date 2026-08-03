@@ -141,4 +141,5 @@
     <string name="reminder_notification_title">Notiz-Erinnerung</string>
     <string name="reminder_tap_to_open">Tippen, um die Notiz zu öffnen</string>
     <string name="notification_channel_reminders">Erinnerungen</string>
+    <string name="settings_check_updates">Nach Updates suchen</string>
 </resources>
