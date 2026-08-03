@@ -59,10 +59,13 @@ A standard Gradle Android project (Kotlin, Jetpack Compose):
 ./gradlew assembleDebug
 ```
 
-APKs are also built by GitHub Actions (`.github/workflows/build-apk.yml`).
-Branch pushes produce a debug build; tag pushes and manual runs produce a
-**signed** APK plus an AAB and publish them as a
-[release](../../releases).
+APKs are built by GitHub Actions (`.github/workflows/build-apk.yml`). Branch
+pushes produce a debug build; tag pushes and manual runs produce a **signed**
+APK plus an AAB, uploaded as workflow artifacts.
+
+**Builds are deliberately not published as GitHub releases.** The finished app
+is sold, and the source being open is what lets you verify the claims above —
+not a free download link. Build it yourself if you would rather not pay.
 
 Signing is fed purely from environment variables. Without `KEYSTORE_PATH` — a
 local build, for instance — `assembleRelease` still succeeds and produces an
