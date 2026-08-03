@@ -17,7 +17,7 @@ fun cmdOutput(vararg args: String): String = try {
 
 // Versionsangaben zur Build-Zeit aus Git ableiten - gleiches Vorgehen wie beim
 // UpTown Dashboard, damit beide Apps dieselbe Anzeige haben.
-val appVersionName = "1.14"
+val appVersionName = "1.15"
 val gitShort = cmdOutput("git", "rev-parse", "--short", "HEAD").ifBlank { "local" }
 val commitSubject = cmdOutput("git", "log", "-1", "--pretty=%s")
 val mergePr = Regex("#(\\d+)").find(commitSubject)?.groupValues?.get(1)
@@ -28,6 +28,7 @@ val buildLabel = when {
     else -> "dev"
 }
 val repoUrl = "https://github.com/Kevea/Plainvoice"
+val storeUrl = "https://seraphinkai.gumroad.com/l/Plainvoice"
 
 android {
     namespace = "com.plainvoice.app"
@@ -37,13 +38,14 @@ android {
         applicationId = "com.plainvoice.app"
         minSdk = 26
         targetSdk = 34
-        versionCode = 14
+        versionCode = 15
         versionName = appVersionName
 
         // Lesbare Version fuer die Anzeige in den Einstellungen, z. B. "1.14 (#42)".
         buildConfigField("String", "APP_VERSION", "\"$appVersionName ($buildLabel)\"")
         buildConfigField("String", "APP_COMMIT", "\"$gitShort\"")
         buildConfigField("String", "APP_REPO_URL", "\"$repoUrl\"")
+        buildConfigField("String", "APP_STORE_URL", "\"$storeUrl\"")
 
         vectorDrawables {
             useSupportLibrary = true

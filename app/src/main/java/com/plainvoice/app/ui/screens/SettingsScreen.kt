@@ -575,24 +575,21 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Versionsfussnote. Tippen oeffnet die Releases-Seite auf GitHub —
-            // fuer eine seitlich installierte App der einzige Update-Weg.
+            // Versionsfussnote. Zwei Ziele: Updates kommen aus dem Store, weil die
+            // App ohne INTERNET-Berechtigung nicht selbst danach suchen kann. Der
+            // Quellcode-Link bleibt daneben stehen — er ist der Beleg fuer genau
+            // diese Berechtigung.
+            val openUrl: (String) -> Unit = { url ->
+                try {
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                } catch (e: ActivityNotFoundException) {
+                    // Kein Browser installiert — dann passiert eben nichts,
+                    // statt die App abstuerzen zu lassen.
+                }
+            }
+
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        val intent = Intent(
-                            Intent.ACTION_VIEW,
-                            Uri.parse("${BuildConfig.APP_REPO_URL}/releases"),
-                        )
-                        try {
-                            context.startActivity(intent)
-                        } catch (e: ActivityNotFoundException) {
-                            // Kein Browser installiert — dann passiert eben nichts,
-                            // statt die App abstuerzen zu lassen.
-                        }
-                    }
-                    .padding(vertical = 8.dp),
+                modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 Text(
@@ -600,11 +597,22 @@ fun SettingsScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.settings_check_updates),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .clickable { openUrl(BuildConfig.APP_STORE_URL) }
+                        .padding(vertical = 6.dp, horizontal = 12.dp),
+                )
                 Text(
                     text = stringResource(R.string.settings_view_on_github),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .clickable { openUrl(BuildConfig.APP_REPO_URL) }
+                        .padding(vertical = 6.dp, horizontal = 12.dp),
                 )
             }
 
