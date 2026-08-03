@@ -10,16 +10,22 @@ Build-/Release-Workflow funktioniert — als Gedächtnisstütze für zukünftige
 
 - Kotlin, Jetpack Compose (Material3), `Compose BOM 2024.10.01`
 - Navigation-Compose für die Screen-Navigation
-- Room (SQLite) als lokale Datenbank, `fallbackToDestructiveMigration()` —
-  **jede Schema-Änderung löscht alle lokalen Daten** (keine echten Migrationen)
+- Room (SQLite) als lokale Datenbank mit **echten Migrationen** — Schema
+  version 6 ist die Basis, Export nach `app/schemas/`, `MIGRATIONS` in
+  `NoteDatabase`. `fallbackToDestructiveMigration()` wurde entfernt
+- `androidx.appcompat` ist nur wegen `AppCompatDelegate.setApplicationLocales`
+  eingebunden (Sprachumschaltung unter Android 13)
 - MVVM: `AndroidViewModel` + `StateFlow`, kein Dependency-Injection-Framework
   (manuelles Singleton-Pattern über `companion object getInstance(context)`)
 - Android `SpeechRecognizer` für Live-Transkription (keine Cloud-API)
 - `com.tom-roush:pdfbox-android` für Offline-PDF-Textextraktion (Import) und
   Android-Bordmittel (`PdfDocument`) für PDF-Export
-- Package: `com.plainvoice.app` · App-Name: „Plainvoice"
-- GitHub: Repo ist umbenannt zu `Kevea/Plainvoice`, MCP-Tools referenzieren aber
-  weiterhin `owner=Kevea, repo=coder` (GitHub leitet automatisch weiter)
+- Package: `com.plainvoice.app` · App-Name: „Plainvoice" (bis 2026-08-03
+  „EchoNote", Paket `com.echonote.app`)
+- GitHub: `Kevea/Plainvoice` (öffentlich)
+- **Sprachen:** Englisch ist Standard (`values/`), Deutsch in `values-de/`.
+  Umschaltbar in den Einstellungen über `AppCompatDelegate.setApplicationLocales`.
+  Keine Anzeigetexte mehr im Kotlin-Code — alles über `strings.xml`
 
 ## Architektur / Paketstruktur
 
@@ -128,12 +134,18 @@ ungenaue `set()`, falls `canScheduleExactAlarms()` false ist oder eine
 `BootReceiver` plant nach Neustart alle offenen Reminder neu, da AlarmManager-
 Einträge einen Reboot nicht überleben.
 
-## Datenbank-Schema-Vorsicht
+## Datenbank-Schema
 
-`fallbackToDestructiveMigration()` heißt: **jede Änderung an `Note`/`Folder`
-oder ein Versionsbump von `NoteDatabase` löscht alle lokalen Notizen des
-Nutzers beim nächsten App-Start.** Vor jeder Schema-Änderung explizit beim
-Nutzer nachfragen/darauf hinweisen.
+Ab 2026-08-03 gibt es **echte Migrationen**. Jede Schema-Änderung braucht
+einen Eintrag in `NoteDatabase.MIGRATIONS` und einen Versionsbump; fehlt die
+Migration, wirft Room beim Start eine `IllegalStateException`. Das ist gewollt
+— ein Absturz im eigenen Test schlägt stillen Datenverlust beim Nutzer.
+
+Das exportierte Schema liegt unter `app/schemas/` und gehört ins Repo.
+
+`DatabaseBackup` legt zusätzlich einmal pro App-Version eine Kopie der
+Datenbank an, bevor Room sie öffnet — inklusive `-wal` und `-shm`, sonst
+fehlten der Kopie die letzten Transaktionen.
 
 ## Build & Release
 
@@ -143,13 +155,15 @@ Nutzer nachfragen/darauf hinweisen.
 - **`versionCode`/`versionName` in `app/build.gradle.kts` vor jedem Build
   hochzählen.** Ein stehengebliebener `versionCode` war wiederholt die Ursache
   für Icon-/Ressourcen-Caching-Probleme auf dem Testgerät.
-- Release-Workflow: `workflow_dispatch` mit Input `release_version` (z. B.
-  `"1.13"`) über `mcp__github__actions_run_trigger` (Methode `run_workflow`).
-  Ein direkter `git push` eines Tags schlägt in dieser Sandbox mit 403 fehl.
-- Direkter `git push` auf `main` scheitert mit HTTP 503 im Sandbox-Git-Proxy.
-  Ablauf zum Synchronisieren: auf dem Feature-Branch
-  `claude/voice-note-transcription-app-x8ymeu` entwickeln → pushen → PR via
-  `mcp__github__create_pull_request` → `mcp__github__merge_pull_request`.
+- **Signierte Releases:** Der Workflow hat zwei Jobs. `debug` läuft bei
+  Branch-Pushes und sieht die Signier-Secrets nie. `release` läuft nur bei
+  Tag-Push oder `workflow_dispatch`, baut `assembleRelease` (APK für den
+  Direktverkauf) **und** `bundleRelease` (AAB für Play), prüft die Signatur
+  mit `apksigner` und löscht den Keystore danach wieder.
+- Secrets im Repo: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
+  `KEY_PASSWORD`. Der Keystore selbst liegt auf UpTown unter `~/.keystores/`
+  und auf der zweiten Festplatte; das Passwort zusätzlich in Vaultwarden.
+- Ablauf zum Synchronisieren: Feature-Branch → push → PR → merge (Squash).
 - **README bei jedem Release aktuell halten** (neue Features ergänzen) —
   das ist mittlerweile Standardvorgehen, nicht nur einmalig.
 - Vor dem Pushen größerer Änderungen: Hintergrund-Review per `Explore`-Subagent
