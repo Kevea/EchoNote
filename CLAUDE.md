@@ -13,8 +13,6 @@ Build-/Release-Workflow funktioniert — als Gedächtnisstütze für zukünftige
 - Room (SQLite) als lokale Datenbank mit **echten Migrationen** — Schema
   version 6 ist die Basis, Export nach `app/schemas/`, `MIGRATIONS` in
   `NoteDatabase`. `fallbackToDestructiveMigration()` wurde entfernt
-- `androidx.appcompat` ist nur wegen `AppCompatDelegate.setApplicationLocales`
-  eingebunden (Sprachumschaltung unter Android 13)
 - MVVM: `AndroidViewModel` + `StateFlow`, kein Dependency-Injection-Framework
   (manuelles Singleton-Pattern über `companion object getInstance(context)`)
 - Android `SpeechRecognizer` für Live-Transkription (keine Cloud-API)
@@ -24,7 +22,6 @@ Build-/Release-Workflow funktioniert — als Gedächtnisstütze für zukünftige
   „EchoNote", Paket `com.echonote.app`)
 - GitHub: `Kevea/Plainvoice` (öffentlich)
 - **Sprachen:** Englisch ist Standard (`values/`), Deutsch in `values-de/`.
-  Umschaltbar in den Einstellungen über `AppCompatDelegate.setApplicationLocales`.
   Keine Anzeigetexte mehr im Kotlin-Code — alles über `strings.xml`
 
 ## Architektur / Paketstruktur
@@ -133,6 +130,29 @@ ungenaue `set()`, falls `canScheduleExactAlarms()` false ist oder eine
 `SecurityException` fliegt (manche OEMs entziehen das Recht ohne Vorwarnung).
 `BootReceiver` plant nach Neustart alle offenen Reminder neu, da AlarmManager-
 Einträge einen Reboot nicht überleben.
+
+## Sprachumschaltung
+
+Die Sprache wird **nicht** über `AppCompatDelegate.setApplicationLocales`
+gesetzt. Dessen Backport greift nur in einer `AppCompatActivity`; diese App
+nutzt `ComponentActivity` mit `android:Theme.Material.Light.NoActionBar`, und
+ein Wechsel auf AppCompat würde einen Theme-Wechsel erzwingen (sonst stürzt die
+App beim Start ab).
+
+Stattdessen `util/LocalePreferences`:
+
+- speichert den Sprach-Tag in SharedPreferences
+- `wrap()` erzeugt per `createConfigurationContext` einen Context mit der
+  gewählten Sprache
+- aufgerufen in `attachBaseContext` von **MainActivity und PlainvoiceApp** —
+  nur dort greift es, später sind die Ressourcen bereits aufgelöst. Die
+  Application mitzunehmen sorgt dafür, dass auch Benachrichtigungen und Widget
+  dieselbe Sprache verwenden
+- ein **leerer Tag** heißt „Systemsprache" und überschreibt bewusst nichts, damit
+  die ab Android 13 systemseitig verwaltete App-Sprache weiter funktioniert
+  (`android:localeConfig` im Manifest bleibt dafür bestehen)
+- die Auswahl in den Einstellungen ruft `recreate()` auf, damit
+  `attachBaseContext` erneut läuft
 
 ## Datenbank-Schema
 
