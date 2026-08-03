@@ -60,6 +60,8 @@ com.plainvoice.app/
 │   ├── ReminderScheduler.kt       AlarmManager (exact-alarm mit Fallback)
 │   ├── ReminderReceiver.kt        BroadcastReceiver → Notification
 │   ├── BootReceiver.kt            Reminder nach Geräteneustart neu planen
+│   ├── LocalePreferences.kt       App-Sprache; wird in attachBaseContext
+│   │                              angewandt (siehe Abschnitt unten)
 │   └── TimeFormat.kt              Datum/Dauer-Formatierung
 ├── viewmodel/
 │   ├── NotesViewModel.kt          Listen-/Ordner-/Filter-/Mehrfachauswahl-Logik
