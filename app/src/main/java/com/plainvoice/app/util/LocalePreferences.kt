@@ -2,6 +2,7 @@ package com.plainvoice.app.util
 
 import android.content.Context
 import android.content.res.Configuration
+import android.util.Log
 import java.util.Locale
 
 /**
@@ -21,6 +22,8 @@ object LocalePreferences {
 
     const val SYSTEM_DEFAULT = ""
 
+    private const val TAG = "LocalePreferences"
+
     private const val PREFS = "locale_settings"
     private const val KEY_TAG = "language_tag"
 
@@ -35,20 +38,35 @@ object LocalePreferences {
      * Legt die gewaehlte Sprache ueber einen Context. Muss in
      * `attachBaseContext` passieren — spaeter sind die Ressourcen bereits
      * aufgeloest und eine Aenderung bliebe wirkungslos.
+     *
+     * Faellt bei jedem Fehler auf den unveraenderten Context zurueck: eine
+     * Spracheinstellung darf den Start der App niemals verhindern.
      */
-    fun wrap(base: Context): Context {
+    fun wrap(base: Context): Context = try {
         val tag = currentTag(base)
-        if (tag == SYSTEM_DEFAULT) return base
+        if (tag == SYSTEM_DEFAULT) {
+            base
+        } else {
+            val locale = Locale.forLanguageTag(tag)
+            Locale.setDefault(locale)
 
-        val locale = Locale.forLanguageTag(tag)
-        Locale.setDefault(locale)
-
-        val config = Configuration(base.resources.configuration)
-        config.setLocale(locale)
-        config.setLayoutDirection(locale)
-        return base.createConfigurationContext(config)
+            val config = Configuration(base.resources.configuration)
+            config.setLocale(locale)
+            config.setLayoutDirection(locale)
+            base.createConfigurationContext(config)
+        }
+    } catch (e: Exception) {
+        Log.w(TAG, "Sprache konnte nicht gesetzt werden, nutze Systemsprache", e)
+        base
     }
 
+    /**
+     * Bewusst **ohne** `applicationContext`: In `Application.attachBaseContext`
+     * ist `super.attachBaseContext()` noch nicht gelaufen, dort liefert
+     * `applicationContext` null — und der Zugriff darauf liess die App beim
+     * Start abstuerzen. Der uebergebene Context reicht; SharedPreferences
+     * zeigen prozessweit auf dieselbe Datei.
+     */
     private fun prefs(context: Context) =
-        context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 }
