@@ -83,6 +83,7 @@ import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.DrawerValue
@@ -415,7 +416,7 @@ private fun DrawerContent(
         )
         HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp, horizontal = 12.dp))
         Text(
-            text = "ORDNER",
+            text = stringResource(R.string.list_folders).uppercase(),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp),
@@ -546,7 +547,12 @@ private fun DrawerRow(
     ) {
         icon()
         Spacer(modifier = Modifier.width(12.dp))
-        Text(label, style = MaterialTheme.typography.labelLarge, maxLines = 1)
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         if (trailing != null) {
             Spacer(modifier = Modifier.width(10.dp))
             trailing()
