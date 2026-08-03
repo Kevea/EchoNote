@@ -1,0 +1,49 @@
+package com.plainvoice.app.data
+
+import androidx.room.Dao
+import androidx.room.Delete
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
+import androidx.room.Query
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+
+@Dao
+interface NoteDao {
+
+    @Query("SELECT * FROM notes ORDER BY isPinned DESC, sortOrder DESC")
+    fun observeAll(): Flow<List<Note>>
+
+    @Query(
+        """
+        SELECT * FROM notes
+        WHERE title LIKE '%' || :query || '%' OR content LIKE '%' || :query || '%' OR tags LIKE '%' || :query || '%'
+        ORDER BY isPinned DESC, sortOrder DESC
+        """
+    )
+    fun search(query: String): Flow<List<Note>>
+
+    @Query("SELECT * FROM notes WHERE id = :id")
+    fun observeById(id: Long): Flow<Note?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(note: Note): Long
+
+    @Update
+    suspend fun update(note: Note)
+
+    @Delete
+    suspend fun delete(note: Note)
+
+    @Query("DELETE FROM notes WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
+    @Query("UPDATE notes SET folderId = NULL WHERE folderId = :folderId")
+    suspend fun clearFolder(folderId: Long)
+
+    @Query("SELECT * FROM notes WHERE reminderAt IS NOT NULL")
+    suspend fun getNotesWithReminders(): List<Note>
+
+    @Query("SELECT * FROM notes WHERE folderId = :folderId")
+    suspend fun getByFolder(folderId: Long): List<Note>
+}

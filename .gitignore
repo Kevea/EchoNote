@@ -11,3 +11,11 @@
 *.aab
 app/build/
 app/release/
+
+# Lokale Sicherungskopien vor Aenderungen
+*.backup
+
+# Signaturschluessel duerfen nie ins Repo
+*.jks
+*.keystore
+keystore.properties

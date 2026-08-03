@@ -14,5 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "EchoNote"
+rootProject.name = "Plainvoice"
 include(":app")

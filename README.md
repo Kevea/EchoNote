@@ -1,4 +1,4 @@
-# EchoNote
+# Plainvoice
 
 Sprachnotizen-App für Android mit Live-Transkription: aufnehmen, während du sprichst wird der Text automatisch erzeugt, in Ordnern organisieren und bei Bedarf nachbearbeiten.
 
@@ -17,6 +17,9 @@ Sprachnotizen-App für Android mit Live-Transkription: aufnehmen, während du sp
   Bearbeitungshintergrund)
 - Erinnerungen auf Notizen mit Datum und Uhrzeit
 - Notizen als Text-, Markdown- oder PDF-Datei exportieren und teilen
+- Automatischer Export: getaggte Notizen können bei jeder Tag-Änderung automatisch als
+  .md/.txt-Datei (mit YAML-Frontmatter für Tags/Erstellungsdatum) in einen frei wählbaren
+  Ordner geschrieben werden, z. B. für den Sync mit einer separaten Syncthing-App
 - Umfangreiche Design-Anpassung: eigene Akzent- und Grundfarbe, mehrere Hintergrund-Muster
   (Verlauf, radial, mehrfarbig), Kartenstil, Hell-/Dunkel-/System-Design, Schriftgröße und
   optionale eigene Schriftfarbe für Notizen
