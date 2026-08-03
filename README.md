@@ -35,6 +35,12 @@ cover.
 The version and commit are shown at the bottom of Settings; tapping them opens
 the [releases page](../../releases).
 
+## Getting notes into Obsidian
+
+Plainvoice writes Markdown into a folder you pick; Syncthing carries that folder
+to your computer and Obsidian reads it. Step by step in
+[SYNC-GUIDE.md](SYNC-GUIDE.md).
+
 ## Privacy
 
 No accounts, no analytics, no crash reporting, no tracking. Notes stay on the

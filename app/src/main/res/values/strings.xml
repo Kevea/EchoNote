@@ -13,8 +13,8 @@
     <string name="empty_title">No notes yet</string>
     <string name="empty_subtitle">Tap the microphone and start talking –\nPlainvoice transcribes as you speak.</string>
     <string name="new_note_fallback_title">New note</string>
-    <string name="list_write_note">Write a note</string>
-    <string name="list_import_note">Import a note</string>
+    <string name="list_write_note">Write note</string>
+    <string name="list_import_note">Import note</string>
 
     <string name="record_tap_to_start">Tap to record</string>
     <string name="record_listening">Listening…</string>
