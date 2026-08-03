@@ -40,7 +40,9 @@ com.plainvoice.app/
 │   │                             sortOrder, reminderAt, createdAt, updatedAt
 │   ├── Folder.kt                @Entity: name, colorIndex, sortOrder
 │   ├── NoteDao.kt / FolderDao.kt Room-DAOs (Flow-basiert für Observability)
-│   ├── NoteDatabase.kt          @Database version=6, fallbackToDestructiveMigration
+│   ├── NoteDatabase.kt          @Database version=6, echte Migrationen +
+│   │                             Schema-Export nach app/schemas/
+│   ├── DatabaseBackup.kt        Sichert die DB vor jedem App-Upgrade
 │   └── NoteRepository.kt        Fasst beide DAOs zusammen, Singleton
 ├── util/
 │   ├── VoiceCaptureController.kt  Kapselt SpeechRecognizer-Lifecycle (siehe unten)

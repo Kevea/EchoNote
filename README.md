@@ -1,35 +1,63 @@
 # Plainvoice
 
-Sprachnotizen-App für Android mit Live-Transkription: aufnehmen, während du sprichst wird der Text automatisch erzeugt, in Ordnern organisieren und bei Bedarf nachbearbeiten.
+Voice notes for Android that land in your vault as Markdown. Record, and the
+text appears while you speak; organise notes in folders and edit them afterwards.
 
-## Funktionen
+**No network access.** Plainvoice does not request Android's `INTERNET`
+permission — the operating system enforces that it cannot send anything
+anywhere. See [DATENSCHUTZ.md](DATENSCHUTZ.md) for what that does and does not
+cover.
 
-- Sprachaufnahme mit Live-Transkription (Android SpeechRecognizer), ein Tap genügt
-- Aufnahme lässt sich pausieren und fortsetzen, ohne dass Text verloren geht
-- Notizen auch ohne Aufnahme direkt als Text schreiben
-- Notizen aus .txt- oder .pdf-Dateien importieren (Dateiauswahl über den Drawer)
-- Homescreen-Widget für die Aufnahme mit einem Tap
-- Notizen in Ordnern organisieren, mit eigener Farbe pro Ordner
-- Ordner und Notizen jeweils per Drag & Drop frei sortieren
-- Mehrfachauswahl: Notizen anheften, verschieben oder löschen
-- Tags, Anheften, Suche (auch offline im Transkript), Markdown-Vorschau im Editor
-  (öffnet standardmäßig in der Vorschau, mit optionalem Umschalter für den
-  Bearbeitungshintergrund)
-- Erinnerungen auf Notizen mit Datum und Uhrzeit
-- Notizen als Text-, Markdown- oder PDF-Datei exportieren und teilen
-- Automatischer Export: getaggte Notizen können bei jeder Tag-Änderung automatisch als
-  .md/.txt-Datei (mit YAML-Frontmatter für Tags/Erstellungsdatum) in einen frei wählbaren
-  Ordner geschrieben werden, z. B. für den Sync mit einer separaten Syncthing-App
-- Umfangreiche Design-Anpassung: eigene Akzent- und Grundfarbe, mehrere Hintergrund-Muster
-  (Verlauf, radial, mehrfarbig), Kartenstil, Hell-/Dunkel-/System-Design, Schriftgröße und
-  optionale eigene Schriftfarbe für Notizen
+## Features
+
+- Voice recording with live transcription (Android `SpeechRecognizer`), one tap
+- Pause and resume a recording without losing what you already said
+- Write notes as plain text without recording at all
+- Import notes from `.txt` and `.pdf` files
+- Home screen widget for one-tap recording
+- Folders with their own colour per folder
+- Free ordering of folders and notes by drag and drop
+- Multi-select: pin, move or delete several notes at once
+- Tags, pinning, search (offline, including the transcript), Markdown preview in
+  the editor (opens in preview by default, with an optional switch for the
+  editing background)
+- Reminders on notes with date and time
+- Export and share notes as text, Markdown or PDF
+- Automatic export: tagged notes are written as `.md`/`.txt` with YAML
+  frontmatter (tags, creation date) into a folder you choose — handy for syncing
+  into an Obsidian vault with Syncthing
+- **English and German**, switchable in Settings independently of the system
+  language
+- Extensive theming: accent and base colour, several background patterns
+  (gradient, radial, mesh), card style, light/dark/system, font size and an
+  optional custom text colour
+
+The version and commit are shown at the bottom of Settings; tapping them opens
+the [releases page](../../releases).
+
+## Privacy
+
+No accounts, no analytics, no crash reporting, no tracking. Notes stay on the
+device; exports go only into the folder you pick.
+
+One caveat is stated plainly rather than glossed over: live transcription uses
+Android's own `SpeechRecognizer`, a system service that on most devices sends
+the audio to your device's speech provider. Details in
+[DATENSCHUTZ.md](DATENSCHUTZ.md).
 
 ## Build
 
-Das Projekt ist ein Standard-Gradle-Android-Projekt (Kotlin, Jetpack Compose). Zum Bauen:
+A standard Gradle Android project (Kotlin, Jetpack Compose):
 
 ```
 ./gradlew assembleDebug
 ```
 
-APKs werden außerdem automatisch über GitHub Actions gebaut (`.github/workflows/build-apk.yml`) und als Artifact bzw. bei manuellem Trigger mit Versionsnummer als [Release](../../releases) veröffentlicht.
+APKs are also built by GitHub Actions (`.github/workflows/build-apk.yml`).
+Branch pushes produce a debug build; tag pushes and manual runs produce a
+**signed** APK plus an AAB and publish them as a
+[release](../../releases).
+
+Signing is fed purely from environment variables. Without `KEYSTORE_PATH` — a
+local build, for instance — `assembleRelease` still succeeds and produces an
+unsigned artifact instead of failing.
