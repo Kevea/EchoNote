@@ -1,4 +1,4 @@
-# EchoNote
+# Plainvoice
 
 Sprachnotizen-App für Android mit Live-Transkription: aufnehmen, während du sprichst wird der Text automatisch erzeugt, in Ordnern organisieren und bei Bedarf nachbearbeiten.
 

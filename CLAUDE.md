@@ -1,4 +1,4 @@
-# EchoNote — Projektwissen
+# Plainvoice — Projektwissen
 
 Sprachnotizen-App für Android mit Live-Transkription, Ordnern, Tags und
 mehreren Export-/Import-Formaten. Dieses Dokument fasst zusammen, wie die App
@@ -17,15 +17,15 @@ Build-/Release-Workflow funktioniert — als Gedächtnisstütze für zukünftige
 - Android `SpeechRecognizer` für Live-Transkription (keine Cloud-API)
 - `com.tom-roush:pdfbox-android` für Offline-PDF-Textextraktion (Import) und
   Android-Bordmittel (`PdfDocument`) für PDF-Export
-- Package: `com.echonote.app` · App-Name: „EchoNote"
-- GitHub: Repo ist umbenannt zu `Kevea/EchoNote`, MCP-Tools referenzieren aber
+- Package: `com.plainvoice.app` · App-Name: „Plainvoice"
+- GitHub: Repo ist umbenannt zu `Kevea/Plainvoice`, MCP-Tools referenzieren aber
   weiterhin `owner=Kevea, repo=coder` (GitHub leitet automatisch weiter)
 
 ## Architektur / Paketstruktur
 
 ```
-com.echonote.app/
-├── EchoNoteApp.kt              Application-Klasse: Singletons (repository,
+com.plainvoice.app/
+├── PlainvoiceApp.kt              Application-Klasse: Singletons (repository,
 │                                themePreferences, exportPreferences),
 │                                Notification-Channel-Setup, PDFBoxResourceLoader.init()
 ├── MainActivity.kt              NavHost-Setup, globaler Hintergrund-Brush,
@@ -104,7 +104,7 @@ das brach Dark Mode und erzeugte helle Flecken.
 .OpenDocument()` (Storage Access Framework) für die Dateiauswahl. Android hat
 keine eingebaute PDF-Textextraktion (`PdfRenderer` rastert nur Bitmaps), daher
 `com.tom-roush:pdfbox-android` (Init via `PDFBoxResourceLoader.init()` in
-`EchoNoteApp.onCreate()`, sonst crasht `PDDocument.load()`). Proguard braucht
+`PlainvoiceApp.onCreate()`, sonst crasht `PDDocument.load()`). Proguard braucht
 explizite Keep-Regeln für `com.tom_roush.**`, sonst bricht die Release-APK
 durch Minifizierung.
 

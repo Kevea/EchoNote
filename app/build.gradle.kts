@@ -5,16 +5,45 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
+// Fuehrt ein Kommando aus und liefert die getrimmte Ausgabe, bei jedem Fehler "".
+fun cmdOutput(vararg args: String): String = try {
+    val proc = ProcessBuilder(*args).directory(rootDir).start()
+    val text = proc.inputStream.bufferedReader().readText().trim()
+    proc.waitFor()
+    if (proc.exitValue() == 0) text else ""
+} catch (e: Exception) {
+    ""
+}
+
+// Versionsangaben zur Build-Zeit aus Git ableiten - gleiches Vorgehen wie beim
+// UpTown Dashboard, damit beide Apps dieselbe Anzeige haben.
+val appVersionName = "1.14"
+val gitShort = cmdOutput("git", "rev-parse", "--short", "HEAD").ifBlank { "local" }
+val commitSubject = cmdOutput("git", "log", "-1", "--pretty=%s")
+val mergePr = Regex("#(\\d+)").find(commitSubject)?.groupValues?.get(1)
+val runNumber = System.getenv("GITHUB_RUN_NUMBER")
+val buildLabel = when {
+    mergePr != null -> "#$mergePr"
+    !runNumber.isNullOrBlank() -> "build $runNumber"
+    else -> "dev"
+}
+val repoUrl = "https://github.com/Kevea/EchoNote"
+
 android {
-    namespace = "com.echonote.app"
+    namespace = "com.plainvoice.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.echonote.app"
+        applicationId = "com.plainvoice.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 14
-        versionName = "1.14"
+        versionName = appVersionName
+
+        // Lesbare Version fuer die Anzeige in den Einstellungen, z. B. "1.14 (#42)".
+        buildConfigField("String", "APP_VERSION", "\"$appVersionName ($buildLabel)\"")
+        buildConfigField("String", "APP_COMMIT", "\"$gitShort\"")
+        buildConfigField("String", "APP_REPO_URL", "\"$repoUrl\"")
 
         vectorDrawables {
             useSupportLibrary = true
@@ -65,6 +94,8 @@ android {
 
     buildFeatures {
         compose = true
+        // Ab AGP 8 muss BuildConfig ausdruecklich eingeschaltet werden.
+        buildConfig = true
     }
 
     packaging {
