@@ -4,8 +4,6 @@
   Users can override the language inside the app (Settings -> Language).
 -->
 <resources>
-    <string name="app_name">Plainvoice</string>
-
     <string name="notes_title">My notes</string>
     <string name="search_hint">Search notes…</string>
     <string name="filter_all">All</string>
