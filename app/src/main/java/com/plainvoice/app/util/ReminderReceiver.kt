@@ -38,8 +38,8 @@ class ReminderReceiver : BroadcastReceiver() {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_notification)
-            .setContentTitle(title.ifBlank { "Notiz-Erinnerung" })
-            .setContentText("Tippen, um die Notiz zu öffnen")
+            .setContentTitle(title.ifBlank { context.getString(R.string.reminder_notification_title) })
+            .setContentText(context.getString(R.string.reminder_tap_to_open))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

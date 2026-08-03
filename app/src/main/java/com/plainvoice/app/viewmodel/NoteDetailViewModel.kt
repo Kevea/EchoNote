@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.plainvoice.app.PlainvoiceApp
+import com.plainvoice.app.R
 import com.plainvoice.app.data.Folder
 import com.plainvoice.app.data.Note
 import com.plainvoice.app.util.AudioPlayerController
@@ -82,7 +83,7 @@ class NoteDetailViewModel(application: Application, private val noteId: Long) : 
         val app = getApplication<Application>()
         viewModelScope.launch { repository.update(current.copy(reminderAt = timestampMs)) }
         if (timestampMs != null) {
-            ReminderScheduler.schedule(app, current.id, timestampMs, current.title.ifBlank { "Notiz" })
+            ReminderScheduler.schedule(app, current.id, timestampMs, current.title.ifBlank { app.getString(R.string.new_note_fallback_title) })
         } else {
             ReminderScheduler.cancel(app, current.id)
         }
