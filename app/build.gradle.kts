@@ -27,7 +27,7 @@ val buildLabel = when {
     !runNumber.isNullOrBlank() -> "build $runNumber"
     else -> "dev"
 }
-val repoUrl = "https://github.com/Kevea/EchoNote"
+val repoUrl = "https://github.com/Kevea/Plainvoice"
 
 android {
     namespace = "com.plainvoice.app"
