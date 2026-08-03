@@ -140,4 +140,5 @@
     <!-- Erinnerungs-Benachrichtigung -->
     <string name="reminder_notification_title">Notiz-Erinnerung</string>
     <string name="reminder_tap_to_open">Tippen, um die Notiz zu öffnen</string>
+    <string name="notification_channel_reminders">Erinnerungen</string>
 </resources>

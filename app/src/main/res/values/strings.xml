@@ -145,4 +145,5 @@
     <!-- Reminder notification -->
     <string name="reminder_notification_title">Note reminder</string>
     <string name="reminder_tap_to_open">Tap to open the note</string>
+    <string name="notification_channel_reminders">Reminders</string>
 </resources>
