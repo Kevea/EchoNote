@@ -1,60 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Default locale: English. The German translation lives in values-de/.
+  Users can override the language inside the app (Settings -> Language).
+-->
 <resources>
     <string name="app_name">Plainvoice</string>
 
-    <string name="notes_title">Meine Notizen</string>
-    <string name="search_hint">Notizen durchsuchen…</string>
-    <string name="filter_all">Alle</string>
-    <string name="filter_pinned">Angeheftet</string>
-    <string name="empty_title">Noch keine Notizen</string>
-    <string name="empty_subtitle">Tippe auf das Mikrofon und sprich los –\nPlainvoice transkribiert live für dich.</string>
-    <string name="new_note_fallback_title">Neue Notiz</string>
-    <string name="list_write_note">Notiz schreiben</string>
-    <string name="list_import_note">Notiz importieren</string>
+    <string name="notes_title">My notes</string>
+    <string name="search_hint">Search notes…</string>
+    <string name="filter_all">All</string>
+    <string name="filter_pinned">Pinned</string>
+    <string name="empty_title">No notes yet</string>
+    <string name="empty_subtitle">Tap the microphone and start talking –\nPlainvoice transcribes as you speak.</string>
+    <string name="new_note_fallback_title">New note</string>
+    <string name="list_write_note">Write a note</string>
+    <string name="list_import_note">Import a note</string>
 
-    <string name="record_tap_to_start">Tippen zum Aufnehmen</string>
-    <string name="record_listening">Ich höre zu…</string>
-    <string name="record_paused">Pausiert</string>
+    <string name="record_tap_to_start">Tap to record</string>
+    <string name="record_listening">Listening…</string>
+    <string name="record_paused">Paused</string>
     <string name="record_pause">Pause</string>
-    <string name="record_resume">Fortsetzen</string>
-    <string name="record_cancel">Verwerfen</string>
-    <string name="record_save">Speichern</string>
-    <string name="record_permission_rationale">Plainvoice benötigt Mikrofonzugriff, um Sprachnotizen aufzunehmen und zu transkribieren.</string>
-    <string name="record_permission_denied">Kein Mikrofonzugriff. Bitte erlaube den Zugriff in den Einstellungen.</string>
-    <string name="record_grant_permission">Zugriff erlauben</string>
+    <string name="record_resume">Resume</string>
+    <string name="record_cancel">Discard</string>
+    <string name="record_save">Save</string>
+    <string name="record_permission_rationale">Plainvoice needs microphone access to record and transcribe voice notes.</string>
+    <string name="record_permission_denied">No microphone access. Please allow it in the system settings.</string>
+    <string name="record_grant_permission">Allow access</string>
 
-    <string name="detail_title_hint">Titel</string>
-    <string name="detail_content_hint">Transkript bearbeiten oder eigene Notizen hinzufügen…</string>
-    <string name="detail_pin">Anheften</string>
-    <string name="detail_unpin">Loslösen</string>
-    <string name="detail_delete">Löschen</string>
-    <string name="detail_share">Teilen</string>
-    <string name="detail_preview">Vorschau</string>
-    <string name="detail_edit">Bearbeiten</string>
-    <string name="detail_toggle_edit_background">Schwarzen Bearbeitungshintergrund umschalten</string>
-    <string name="detail_delete_confirm_title">Notiz löschen?</string>
-    <string name="detail_delete_confirm_body">Diese Notiz und die zugehörige Sprachaufnahme werden endgültig gelöscht.</string>
-    <string name="action_cancel">Abbrechen</string>
-    <string name="action_delete">Löschen</string>
-    <string name="action_done">Fertig</string>
+    <string name="detail_title_hint">Title</string>
+    <string name="detail_content_hint">Edit the transcript or add your own notes…</string>
+    <string name="detail_pin">Pin</string>
+    <string name="detail_unpin">Unpin</string>
+    <string name="detail_delete">Delete</string>
+    <string name="detail_share">Share</string>
+    <string name="detail_preview">Preview</string>
+    <string name="detail_edit">Edit</string>
+    <string name="detail_toggle_edit_background">Toggle dark editing background</string>
+    <string name="detail_delete_confirm_title">Delete note?</string>
+    <string name="detail_delete_confirm_body">This note and its voice recording will be deleted permanently.</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_done">Done</string>
 
-    <string name="note_saved">Notiz gespeichert</string>
-    <string name="note_deleted">Notiz gelöscht</string>
-    <string name="action_undo">Rückgängig</string>
+    <string name="note_saved">Note saved</string>
+    <string name="note_deleted">Note deleted</string>
+    <string name="action_undo">Undo</string>
 
-    <string name="tag_add_hint">Tag hinzufügen…</string>
+    <string name="tag_add_hint">Add a tag…</string>
 
-    <string name="detail_move_to_folder">In Ordner verschieben</string>
-    <string name="folder_none">Kein Ordner</string>
-    <string name="folder_new_hint">Neuer Ordner…</string>
+    <string name="detail_move_to_folder">Move to folder</string>
+    <string name="folder_none">No folder</string>
+    <string name="folder_new_hint">New folder…</string>
 
-    <string name="detail_reminder">Erinnerung</string>
-    <string name="detail_reminder_pick_time">Uhrzeit wählen</string>
+    <string name="detail_reminder">Reminder</string>
+    <string name="detail_reminder_pick_time">Pick a time</string>
 
-    <string name="widget_record_label">Aufnehmen</string>
-    <string name="widget_description">Neue Sprachnotiz mit einem Tipp aufnehmen</string>
+    <string name="widget_record_label">Record</string>
+    <string name="widget_description">Record a new voice note with one tap</string>
 
-    <string name="detail_export_text">Als Text exportieren (.txt)</string>
-    <string name="detail_export_pdf">Als PDF exportieren</string>
-    <string name="detail_export_markdown">Als Markdown exportieren (.md)</string>
+    <string name="detail_export_text">Export as text (.txt)</string>
+    <string name="detail_export_pdf">Export as PDF</string>
+    <string name="detail_export_markdown">Export as Markdown (.md)</string>
+
+    <!-- Note list -->
+    <string name="list_selected_count">%1$d selected</string>
+    <string name="list_pin">Pin</string>
+    <string name="list_move">Move</string>
+    <string name="list_record">Record</string>
+    <string name="list_all_notes">All notes</string>
+    <string name="list_edit">Edit</string>
+    <string name="folder_new">New folder</string>
+    <string name="folder_delete">Delete folder</string>
+    <string name="list_empty_in_section">No notes in this section yet.</string>
+    <string name="settings_title">Settings</string>
+    <string name="list_folders">Folders</string>
+    <string name="folder_edit">Edit folder</string>
+    <string name="record_note_title_fallback">Note from %1$s</string>
+
+    <!-- Settings: appearance -->
+    <string name="settings_accent_color">Accent colour</string>
+    <string name="settings_base_color">Base colour (background)</string>
+    <string name="settings_text_color">Text colour</string>
+    <string name="settings_default">Default</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="settings_background">Background</string>
+    <string name="settings_note_cards">Note cards</string>
+    <string name="settings_colourful_cards">Colourful cards</string>
+    <string name="settings_rounded_corners">Rounded corners</string>
+    <string name="settings_font_size">Font size</string>
+
+    <!-- Settings: export and sync -->
+    <string name="settings_export_format">Export format</string>
+    <string name="settings_export_folder">Export folder</string>
+    <string name="settings_no_folder_selected">No folder selected</string>
+    <string name="settings_choose_folder">Choose folder</string>
+    <string name="settings_change_folder">Change folder</string>
+    <string name="settings_remove">Remove</string>
+    <string name="settings_no_folders_yet">No folders yet.</string>
+    <string name="settings_pick_target_first">Choose a target folder above to enable syncing.</string>
+    <string name="settings_sync">Sync</string>
+    <string name="settings_auto_sync">Sync automatically</string>
+    <string name="settings_copy">Copy</string>
+    <string name="settings_copy_only">Copy only</string>
+    <string name="settings_move">Move</string>
+    <string name="sync_dialog_title">Sync folder</string>
+    <string name="sync_dialog_body">Copy or move the notes from \"%1$s\" into the target folder?</string>
+
+    <!-- Settings: language -->
+    <string name="settings_language">Language</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_german">Deutsch</string>
+
+    <!-- Settings: about -->
+    <string name="settings_view_on_github">View on GitHub</string>
+
+    <!-- Font size options -->
+    <string name="font_size_small">Small</string>
+    <string name="font_size_normal">Normal</string>
+    <string name="font_size_large">Large</string>
+    <string name="font_size_extra_large">Extra large</string>
+
+    <!-- Dark mode options -->
+    <string name="dark_mode_system">System</string>
+    <string name="dark_mode_light">Light</string>
+    <string name="dark_mode_dark">Dark</string>
+
+    <!-- Background style options -->
+    <string name="background_solid">Solid</string>
+    <string name="background_gradient">Gradient</string>
+    <string name="background_radial">Radial gradient</string>
+    <string name="background_mesh">Mesh (multicolour)</string>
+
+    <!-- Export format options -->
+    <string name="export_format_markdown">Markdown (.md)</string>
+    <string name="export_format_text">Text (.txt)</string>
+
+    <!-- Export errors -->
+    <string name="export_error_no_target">Target folder unavailable</string>
+    <string name="export_error_not_writable">No write access to the export folder</string>
+    <string name="export_error_create_failed">Could not create the file</string>
+    <string name="export_error_open_failed">Could not open the file</string>
+
+    <!-- Reminder notification -->
+    <string name="reminder_notification_title">Note reminder</string>
+    <string name="reminder_tap_to_open">Tap to open the note</string>
 </resources>

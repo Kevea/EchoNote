@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.plainvoice.app.PlainvoiceApp
+import com.plainvoice.app.R
 import com.plainvoice.app.data.Note
 import com.plainvoice.app.util.CaptureUiState
 import com.plainvoice.app.util.VoiceCaptureController
@@ -60,8 +61,9 @@ class RecordingViewModel(application: Application) : AndroidViewModel(applicatio
 
     private fun generateTitle(transcript: String): String {
         if (transcript.isBlank()) {
-            val fmt = SimpleDateFormat("dd.MM. HH:mm", Locale.GERMANY)
-            return "Notiz vom ${fmt.format(Date())}"
+            val fmt = SimpleDateFormat("dd.MM. HH:mm", Locale.getDefault())
+            return getApplication<Application>()
+                .getString(R.string.record_note_title_fallback, fmt.format(Date()))
         }
         val words = transcript.trim().split(Regex("\\s+"))
         val short = words.take(7).joinToString(" ")

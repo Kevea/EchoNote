@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Deutsche Übersetzung. Die Standardsprache liegt in values/ (Englisch). -->
+<resources>
+    <string name="notes_title">Meine Notizen</string>
+    <string name="search_hint">Notizen durchsuchen…</string>
+    <string name="filter_all">Alle</string>
+    <string name="filter_pinned">Angeheftet</string>
+    <string name="empty_title">Noch keine Notizen</string>
+    <string name="empty_subtitle">Tippe auf das Mikrofon und sprich los –\nPlainvoice transkribiert live für dich.</string>
+    <string name="new_note_fallback_title">Neue Notiz</string>
+    <string name="list_write_note">Notiz schreiben</string>
+    <string name="list_import_note">Notiz importieren</string>
+
+    <string name="record_tap_to_start">Tippen zum Aufnehmen</string>
+    <string name="record_listening">Ich höre zu…</string>
+    <string name="record_paused">Pausiert</string>
+    <string name="record_pause">Pause</string>
+    <string name="record_resume">Fortsetzen</string>
+    <string name="record_cancel">Verwerfen</string>
+    <string name="record_save">Speichern</string>
+    <string name="record_permission_rationale">Plainvoice benötigt Mikrofonzugriff, um Sprachnotizen aufzunehmen und zu transkribieren.</string>
+    <string name="record_permission_denied">Kein Mikrofonzugriff. Bitte erlaube den Zugriff in den Einstellungen.</string>
+    <string name="record_grant_permission">Zugriff erlauben</string>
+
+    <string name="detail_title_hint">Titel</string>
+    <string name="detail_content_hint">Transkript bearbeiten oder eigene Notizen hinzufügen…</string>
+    <string name="detail_pin">Anheften</string>
+    <string name="detail_unpin">Loslösen</string>
+    <string name="detail_delete">Löschen</string>
+    <string name="detail_share">Teilen</string>
+    <string name="detail_preview">Vorschau</string>
+    <string name="detail_edit">Bearbeiten</string>
+    <string name="detail_toggle_edit_background">Schwarzen Bearbeitungshintergrund umschalten</string>
+    <string name="detail_delete_confirm_title">Notiz löschen?</string>
+    <string name="detail_delete_confirm_body">Diese Notiz und die zugehörige Sprachaufnahme werden endgültig gelöscht.</string>
+    <string name="action_cancel">Abbrechen</string>
+    <string name="action_delete">Löschen</string>
+    <string name="action_done">Fertig</string>
+
+    <string name="note_saved">Notiz gespeichert</string>
+    <string name="note_deleted">Notiz gelöscht</string>
+    <string name="action_undo">Rückgängig</string>
+
+    <string name="tag_add_hint">Tag hinzufügen…</string>
+
+    <string name="detail_move_to_folder">In Ordner verschieben</string>
+    <string name="folder_none">Kein Ordner</string>
+    <string name="folder_new_hint">Neuer Ordner…</string>
+
+    <string name="detail_reminder">Erinnerung</string>
+    <string name="detail_reminder_pick_time">Uhrzeit wählen</string>
+
+    <string name="widget_record_label">Aufnehmen</string>
+    <string name="widget_description">Neue Sprachnotiz mit einem Tipp aufnehmen</string>
+
+    <string name="detail_export_text">Als Text exportieren (.txt)</string>
+    <string name="detail_export_pdf">Als PDF exportieren</string>
+    <string name="detail_export_markdown">Als Markdown exportieren (.md)</string>
+
+    <!-- Notizliste -->
+    <string name="list_selected_count">%1$d ausgewählt</string>
+    <string name="list_pin">Anheften</string>
+    <string name="list_move">Verschieben</string>
+    <string name="list_record">Aufnehmen</string>
+    <string name="list_all_notes">Alle Notizen</string>
+    <string name="list_edit">Bearbeiten</string>
+    <string name="folder_new">Neuer Ordner</string>
+    <string name="folder_delete">Ordner löschen</string>
+    <string name="list_empty_in_section">In diesem Bereich sind noch keine Notizen.</string>
+    <string name="settings_title">Einstellungen</string>
+    <string name="list_folders">Ordner</string>
+    <string name="folder_edit">Ordner bearbeiten</string>
+    <string name="record_note_title_fallback">Notiz vom %1$s</string>
+
+    <!-- Einstellungen: Darstellung -->
+    <string name="settings_accent_color">Akzentfarbe</string>
+    <string name="settings_base_color">Grundfarbe (Hintergrund)</string>
+    <string name="settings_text_color">Schriftfarbe</string>
+    <string name="settings_default">Standard</string>
+    <string name="settings_appearance">Darstellung</string>
+    <string name="settings_background">Hintergrund</string>
+    <string name="settings_note_cards">Notizkarten</string>
+    <string name="settings_colourful_cards">Bunte Karten</string>
+    <string name="settings_rounded_corners">Abgerundete Ecken</string>
+    <string name="settings_font_size">Schriftgröße</string>
+
+    <!-- Einstellungen: Export und Synchronisation -->
+    <string name="settings_export_format">Export-Format</string>
+    <string name="settings_export_folder">Export-Ordner</string>
+    <string name="settings_no_folder_selected">Kein Ordner ausgewählt</string>
+    <string name="settings_choose_folder">Ordner auswählen</string>
+    <string name="settings_change_folder">Ordner ändern</string>
+    <string name="settings_remove">Entfernen</string>
+    <string name="settings_no_folders_yet">Noch keine Ordner vorhanden.</string>
+    <string name="settings_pick_target_first">Wähle oben einen Zielordner, um synchronisieren zu können.</string>
+    <string name="settings_sync">Sync</string>
+    <string name="settings_auto_sync">Automatisch synchronisieren</string>
+    <string name="settings_copy">Kopieren</string>
+    <string name="settings_copy_only">Nur kopieren</string>
+    <string name="settings_move">Verschieben</string>
+    <string name="sync_dialog_title">Ordner synchronisieren</string>
+    <string name="sync_dialog_body">Notizen aus \"%1$s\" in den Zielordner kopieren oder verschieben?</string>
+
+    <!-- Einstellungen: Sprache -->
+    <string name="settings_language">Sprache</string>
+    <string name="settings_language_system">Systemsprache</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_language_german">Deutsch</string>
+
+    <!-- Einstellungen: Über -->
+    <string name="settings_view_on_github">Auf GitHub ansehen</string>
+
+    <!-- Schriftgrößen -->
+    <string name="font_size_small">Klein</string>
+    <string name="font_size_normal">Normal</string>
+    <string name="font_size_large">Groß</string>
+    <string name="font_size_extra_large">Sehr groß</string>
+
+    <!-- Hell/Dunkel -->
+    <string name="dark_mode_system">System</string>
+    <string name="dark_mode_light">Hell</string>
+    <string name="dark_mode_dark">Dunkel</string>
+
+    <!-- Hintergrundstile -->
+    <string name="background_solid">Einfarbig</string>
+    <string name="background_gradient">Farbverlauf</string>
+    <string name="background_radial">Radialer Verlauf</string>
+    <string name="background_mesh">Mesh (mehrfarbig)</string>
+
+    <!-- Export-Formate -->
+    <string name="export_format_markdown">Markdown (.md)</string>
+    <string name="export_format_text">Text (.txt)</string>
+
+    <!-- Export-Fehler -->
+    <string name="export_error_no_target">Zielordner nicht verfügbar</string>
+    <string name="export_error_not_writable">Kein Schreibzugriff auf den Exportordner</string>
+    <string name="export_error_create_failed">Datei konnte nicht angelegt werden</string>
+    <string name="export_error_open_failed">Datei konnte nicht geöffnet werden</string>
+
+    <!-- Erinnerungs-Benachrichtigung -->
+    <string name="reminder_notification_title">Notiz-Erinnerung</string>
+    <string name="reminder_tap_to_open">Tippen, um die Notiz zu öffnen</string>
+</resources>

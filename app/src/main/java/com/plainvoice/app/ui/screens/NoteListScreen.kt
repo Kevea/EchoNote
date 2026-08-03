@@ -208,13 +208,13 @@ fun NoteListScreen(
                                 Icon(Icons.Filled.Close, contentDescription = null)
                             }
                         },
-                        title = { Text("${selectedIds.size} ausgewählt") },
+                        title = { Text(stringResource(R.string.list_selected_count, selectedIds.size)) },
                         actions = {
                             IconButton(onClick = { viewModel.bulkPin(true) }) {
-                                Icon(Icons.Filled.PushPin, contentDescription = "Anheften")
+                                Icon(Icons.Filled.PushPin, contentDescription = stringResource(R.string.list_pin))
                             }
                             IconButton(onClick = { showMoveDialog = true }) {
-                                Icon(Icons.Filled.DriveFileMove, contentDescription = "Verschieben")
+                                Icon(Icons.Filled.DriveFileMove, contentDescription = stringResource(R.string.list_move))
                             }
                             IconButton(onClick = {
                                 viewModel.bulkDelete {
@@ -233,7 +233,7 @@ fun NoteListScreen(
                                     }
                                 }
                             }) {
-                                Icon(Icons.Filled.Delete, contentDescription = "Löschen")
+                                Icon(Icons.Filled.Delete, contentDescription = stringResource(R.string.action_delete))
                             }
                         },
                     )
@@ -285,7 +285,7 @@ fun NoteListScreen(
                         ExtendedFloatingActionButton(
                             onClick = onRecordClick,
                             icon = { Icon(Icons.Filled.Mic, contentDescription = null) },
-                            text = { Text("Aufnehmen") },
+                            text = { Text(stringResource(R.string.list_record)) },
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary,
                         )
@@ -360,10 +360,11 @@ fun NoteListScreen(
     }
 }
 
+@Composable
 private fun folderScreenTitle(filter: FolderFilter, folders: List<Folder>): String = when (filter) {
-    is FolderFilter.All -> "Alle Notizen"
-    is FolderFilter.Unfiled -> "Meine Notizen"
-    is FolderFilter.Specific -> folders.find { it.id == filter.folderId }?.name ?: "Ordner"
+    is FolderFilter.All -> stringResource(R.string.list_all_notes)
+    is FolderFilter.Unfiled -> stringResource(R.string.notes_title)
+    is FolderFilter.Specific -> folders.find { it.id == filter.folderId }?.name ?: stringResource(R.string.list_folders)
 }
 
 @Composable
@@ -401,13 +402,13 @@ private fun DrawerContent(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
         )
         DrawerRow(
-            label = "Meine Notizen",
+            label = stringResource(R.string.notes_title),
             icon = { Icon(Icons.Filled.NoteAlt, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = folderFilter is FolderFilter.Unfiled,
             onClick = { onSelectFilter(FolderFilter.Unfiled) },
         )
         DrawerRow(
-            label = "Alle Notizen",
+            label = stringResource(R.string.list_all_notes),
             icon = { Icon(Icons.Filled.FolderOff, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = folderFilter is FolderFilter.All,
             onClick = { onSelectFilter(FolderFilter.All) },
@@ -492,7 +493,7 @@ private fun DrawerContent(
                                 }
                                 DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                                     DropdownMenuItem(
-                                        text = { Text("Bearbeiten") },
+                                        text = { Text(stringResource(R.string.list_edit)) },
                                         onClick = { menuExpanded = false; onEditFolder(folder) },
                                     )
                                 }
@@ -504,7 +505,7 @@ private fun DrawerContent(
           }
         }
         DrawerRow(
-            label = "Neuer Ordner",
+            label = stringResource(R.string.folder_new),
             icon = { Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = onNewFolder,
@@ -517,7 +518,7 @@ private fun DrawerContent(
             onClick = onImport,
         )
         DrawerRow(
-            label = "Einstellungen",
+            label = stringResource(R.string.settings_title),
             icon = { Icon(Icons.Filled.Settings, contentDescription = null, modifier = Modifier.size(20.dp)) },
             selected = false,
             onClick = onSettings,
@@ -565,7 +566,7 @@ private fun FolderEditDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (initial == null) "Neuer Ordner" else "Ordner bearbeiten") },
+        title = { Text(if (initial == null) stringResource(R.string.folder_new) else stringResource(R.string.folder_edit)) },
         text = {
             Column {
                 OutlinedTextField(
@@ -595,7 +596,7 @@ private fun FolderEditDialog(
                 }
                 if (onDelete != null) {
                     Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(onClick = onDelete) { Text("Ordner löschen") }
+                    TextButton(onClick = onDelete) { Text(stringResource(R.string.folder_delete)) }
                 }
             }
         },
@@ -705,7 +706,7 @@ private fun EmptyState(folderFilter: FolderFilter) {
                 text = if (folderFilter is FolderFilter.Unfiled) {
                     stringResource(R.string.empty_subtitle)
                 } else {
-                    "In diesem Bereich sind noch keine Notizen."
+                    stringResource(R.string.list_empty_in_section)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

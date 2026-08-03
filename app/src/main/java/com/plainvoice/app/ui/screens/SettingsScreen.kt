@@ -3,7 +3,10 @@ package com.plainvoice.app.ui.screens
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.os.LocaleListCompat
 import com.plainvoice.app.BuildConfig
+import com.plainvoice.app.R
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -58,6 +61,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -116,21 +120,21 @@ fun SettingsScreen(
     pendingSyncFolder?.let { folder ->
         AlertDialog(
             onDismissRequest = { pendingSyncFolder = null },
-            title = { Text("Ordner synchronisieren") },
-            text = { Text("Notizen aus \"${folder.name}\" in den Zielordner kopieren oder verschieben?") },
+            title = { Text(stringResource(R.string.sync_dialog_title)) },
+            text = { Text(stringResource(R.string.sync_dialog_body, folder.name)) },
             confirmButton = {
                 TextButton(onClick = {
                     viewModel.syncFolder(folder, move = false)
                     pendingSyncFolder = null
-                }) { Text("Nur kopieren") }
+                }) { Text(stringResource(R.string.settings_copy_only)) }
             },
             dismissButton = {
                 Row {
                     TextButton(onClick = {
                         viewModel.syncFolder(folder, move = true)
                         pendingSyncFolder = null
-                    }) { Text("Verschieben") }
-                    TextButton(onClick = { pendingSyncFolder = null }) { Text("Abbrechen") }
+                    }) { Text(stringResource(R.string.settings_move)) }
+                    TextButton(onClick = { pendingSyncFolder = null }) { Text(stringResource(R.string.action_cancel)) }
                 }
             },
         )
@@ -141,7 +145,7 @@ fun SettingsScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Einstellungen") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = null)
@@ -156,7 +160,7 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
         ) {
-            Text("Akzentfarbe", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_accent_color), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -185,7 +189,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Grundfarbe (Hintergrund)", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_base_color), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -214,7 +218,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Schriftfarbe", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_text_color), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(12.dp))
             Row(
                 modifier = Modifier.horizontalScroll(rememberScrollState()),
@@ -236,7 +240,7 @@ fun SettingsScreen(
                 ) {
                     Icon(
                         Icons.Filled.Close,
-                        contentDescription = "Standard",
+                        contentDescription = stringResource(R.string.settings_default),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -263,7 +267,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Darstellung", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_appearance), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -287,7 +291,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Hintergrund", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_background), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -311,7 +315,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Notizkarten", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_note_cards), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -323,7 +327,7 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
-                    Text("Bunte Karten", modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.settings_colourful_cards), modifier = Modifier.weight(1f))
                     Switch(
                         checked = settings.colorfulCards,
                         onCheckedChange = { viewModel.setColorfulCards(it) },
@@ -335,7 +339,7 @@ fun SettingsScreen(
                         .fillMaxWidth()
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
-                    Text("Abgerundete Ecken", modifier = Modifier.weight(1f))
+                    Text(stringResource(R.string.settings_rounded_corners), modifier = Modifier.weight(1f))
                     Switch(
                         checked = settings.roundedCards,
                         onCheckedChange = { viewModel.setRoundedCards(it) },
@@ -344,7 +348,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Schriftgröße", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_font_size), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -368,7 +372,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Export-Format", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_export_format), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -392,7 +396,7 @@ fun SettingsScreen(
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Export-Ordner", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.settings_export_folder), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -409,12 +413,12 @@ fun SettingsScreen(
                         .padding(horizontal = 16.dp, vertical = 8.dp),
                 ) {
                     Text(
-                        folderName ?: "Kein Ordner ausgewählt",
+                        folderName ?: stringResource(R.string.settings_no_folder_selected),
                         modifier = Modifier.weight(1f),
                         style = MaterialTheme.typography.bodyMedium,
                     )
                     Button(onClick = { folderPickerLauncher.launch(null) }) {
-                        Text(if (folderName == null) "Ordner auswählen" else "Ordner ändern")
+                        Text(if (folderName == null) stringResource(R.string.settings_choose_folder) else stringResource(R.string.settings_change_folder))
                     }
                 }
                 if (folderName != null) {
@@ -433,14 +437,14 @@ fun SettingsScreen(
                             }
                             viewModel.setExportFolder(null)
                         }) {
-                            Text("Entfernen")
+                            Text(stringResource(R.string.settings_remove))
                         }
                     }
                 }
             }
 
             Spacer(modifier = Modifier.height(32.dp))
-            Text("Ordner synchronisieren", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.sync_dialog_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Card(
                 shape = RoundedCornerShape(16.dp),
@@ -448,14 +452,14 @@ fun SettingsScreen(
             ) {
                 if (folders.isEmpty()) {
                     Text(
-                        "Noch keine Ordner vorhanden.",
+                        stringResource(R.string.settings_no_folders_yet),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(16.dp),
                     )
                 } else {
                     if (exportSettings.folderUri == null) {
                         Text(
-                            "Wähle oben einen Zielordner, um synchronisieren zu können.",
+                            stringResource(R.string.settings_pick_target_first),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
@@ -487,13 +491,13 @@ fun SettingsScreen(
                                         onClick = { pendingSyncFolder = folder },
                                         enabled = exportSettings.folderUri != null,
                                     ) {
-                                        Text("Sync")
+                                        Text(stringResource(R.string.settings_sync))
                                     }
                                 }
                             }
                             Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
                                 Text(
-                                    "Automatisch synchronisieren",
+                                    stringResource(R.string.settings_auto_sync),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier.weight(1f),
@@ -514,12 +518,12 @@ fun SettingsScreen(
                                     FilterChip(
                                         selected = autoMode == FolderSyncMode.MOVE,
                                         onClick = { viewModel.setFolderSyncMode(folder.id, FolderSyncMode.MOVE) },
-                                        label = { Text("Verschieben") },
+                                        label = { Text(stringResource(R.string.settings_move)) },
                                     )
                                     FilterChip(
                                         selected = autoMode == FolderSyncMode.COPY,
                                         onClick = { viewModel.setFolderSyncMode(folder.id, FolderSyncMode.COPY) },
-                                        label = { Text("Kopieren") },
+                                        label = { Text(stringResource(R.string.settings_copy)) },
                                     )
                                 }
                             }
@@ -527,6 +531,51 @@ fun SettingsScreen(
                     }
                 }
             }
+            Spacer(modifier = Modifier.height(32.dp))
+            Text(stringResource(R.string.settings_language), style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            ) {
+                // Leerer Tag bedeutet "Systemsprache". Die Auswahl speichert
+                // AppCompat selbst (autoStoreLocales im Manifest), deshalb gibt es
+                // dafuer keine eigene Preference. Ein Wechsel legt die Activity neu
+                // an — danach liest getApplicationLocales() den neuen Wert.
+                val languages = listOf(
+                    "" to stringResource(R.string.settings_language_system),
+                    "en" to stringResource(R.string.settings_language_english),
+                    "de" to stringResource(R.string.settings_language_german),
+                )
+                val current = AppCompatDelegate.getApplicationLocales()
+                    .toLanguageTags()
+                    .substringBefore('-')
+
+                languages.forEach { (tag, label) ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                AppCompatDelegate.setApplicationLocales(
+                                    LocaleListCompat.forLanguageTags(tag),
+                                )
+                            }
+                            .padding(horizontal = 16.dp, vertical = 4.dp),
+                    ) {
+                        RadioButton(
+                            selected = current == tag,
+                            onClick = {
+                                AppCompatDelegate.setApplicationLocales(
+                                    LocaleListCompat.forLanguageTags(tag),
+                                )
+                            },
+                        )
+                        Text(label)
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(24.dp))
 
             // Versionsfussnote. Tippen oeffnet die Releases-Seite auf GitHub —
@@ -556,7 +605,7 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = "Auf GitHub ansehen",
+                    text = stringResource(R.string.settings_view_on_github),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary,
                 )
@@ -567,27 +616,31 @@ fun SettingsScreen(
     }
 }
 
+@Composable
 private fun darkModeLabel(option: DarkModeOption): String = when (option) {
-    DarkModeOption.SYSTEM -> "System"
-    DarkModeOption.LIGHT -> "Hell"
-    DarkModeOption.DARK -> "Dunkel"
+    DarkModeOption.SYSTEM -> stringResource(R.string.dark_mode_system)
+    DarkModeOption.LIGHT -> stringResource(R.string.dark_mode_light)
+    DarkModeOption.DARK -> stringResource(R.string.dark_mode_dark)
 }
 
+@Composable
 private fun backgroundStyleLabel(option: BackgroundStyle): String = when (option) {
-    BackgroundStyle.SOLID -> "Einfarbig"
-    BackgroundStyle.GRADIENT -> "Farbverlauf"
-    BackgroundStyle.RADIAL -> "Radialer Verlauf"
-    BackgroundStyle.MESH -> "Mesh (mehrfarbig)"
+    BackgroundStyle.SOLID -> stringResource(R.string.background_solid)
+    BackgroundStyle.GRADIENT -> stringResource(R.string.background_gradient)
+    BackgroundStyle.RADIAL -> stringResource(R.string.background_radial)
+    BackgroundStyle.MESH -> stringResource(R.string.background_mesh)
 }
 
+@Composable
 private fun fontSizeLabel(option: FontSizeOption): String = when (option) {
-    FontSizeOption.SMALL -> "Klein"
-    FontSizeOption.NORMAL -> "Normal"
-    FontSizeOption.LARGE -> "Groß"
-    FontSizeOption.EXTRA_LARGE -> "Sehr groß"
+    FontSizeOption.SMALL -> stringResource(R.string.font_size_small)
+    FontSizeOption.NORMAL -> stringResource(R.string.font_size_normal)
+    FontSizeOption.LARGE -> stringResource(R.string.font_size_large)
+    FontSizeOption.EXTRA_LARGE -> stringResource(R.string.font_size_extra_large)
 }
 
+@Composable
 private fun exportFormatLabel(option: ExportFormat): String = when (option) {
-    ExportFormat.MARKDOWN -> "Markdown (.md)"
-    ExportFormat.TEXT -> "Text (.txt)"
+    ExportFormat.MARKDOWN -> stringResource(R.string.export_format_markdown)
+    ExportFormat.TEXT -> stringResource(R.string.export_format_text)
 }

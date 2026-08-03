@@ -9,6 +9,7 @@ import android.text.StaticLayout
 import android.text.TextPaint
 import androidx.core.content.FileProvider
 import androidx.documentfile.provider.DocumentFile
+import com.plainvoice.app.R
 import com.plainvoice.app.data.Note
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -23,14 +24,14 @@ object NoteExporter {
     private val FRONTMATTER_DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME
 
     fun exportAsText(context: Context, note: Note): Uri {
-        val title = note.title.ifBlank { "Notiz" }
+        val title = note.title.ifBlank { context.getString(R.string.new_note_fallback_title) }
         val file = exportFile(context, title, "txt")
         file.writeText(buildTextBody(note, title))
         return uriFor(context, file)
     }
 
     fun exportAsMarkdown(context: Context, note: Note): Uri {
-        val title = note.title.ifBlank { "Notiz" }
+        val title = note.title.ifBlank { context.getString(R.string.new_note_fallback_title) }
         val file = exportFile(context, title, "md")
         file.writeText(buildMarkdownBody(note, title))
         return uriFor(context, file)
@@ -47,21 +48,21 @@ object NoteExporter {
     ): Result<Unit> = withContext(Dispatchers.IO) {
         runCatching {
             val tree = DocumentFile.fromTreeUri(context, treeUri)
-                ?: error("Zielordner nicht verfügbar")
+                ?: error(context.getString(R.string.export_error_no_target))
             if (!tree.isDirectory || !tree.canWrite()) {
-                error("Kein Schreibzugriff auf den Exportordner")
+                error(context.getString(R.string.export_error_not_writable))
             }
 
-            val title = note.title.ifBlank { "Notiz" }
+            val title = note.title.ifBlank { context.getString(R.string.new_note_fallback_title) }
             val body = when (format) {
                 ExportFormat.MARKDOWN -> buildMarkdownBody(note, title)
                 ExportFormat.TEXT -> buildTextBody(note, title)
             }
 
             val target = tree.findFile(fileName) ?: tree.createFile(format.mimeType, fileName)
-            ?: error("Datei konnte nicht angelegt werden")
+            ?: error(context.getString(R.string.export_error_create_failed))
             val stream = context.contentResolver.openOutputStream(target.uri, "wt")
-                ?: error("Datei konnte nicht geöffnet werden")
+                ?: error(context.getString(R.string.export_error_open_failed))
             stream.use { it.write(body.toByteArray()) }
         }
     }
@@ -87,7 +88,7 @@ object NoteExporter {
     }
 
     fun exportAsPdf(context: Context, note: Note): Uri {
-        val title = note.title.ifBlank { "Notiz" }
+        val title = note.title.ifBlank { context.getString(R.string.new_note_fallback_title) }
         val file = exportFile(context, title, "pdf")
 
         val pageWidth = 595
