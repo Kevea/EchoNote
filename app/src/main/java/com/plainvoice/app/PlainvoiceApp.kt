@@ -1,12 +1,14 @@
 package com.plainvoice.app
 
 import android.app.Application
+import android.content.Context
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.os.Build
 import com.plainvoice.app.data.NoteRepository
 import com.plainvoice.app.util.ExportPreferences
 import com.plainvoice.app.util.FolderSyncPreferences
+import com.plainvoice.app.util.LocalePreferences
 import com.plainvoice.app.util.ReminderReceiver
 import com.plainvoice.app.util.TagColorPreferences
 import com.plainvoice.app.util.ThemePreferences
@@ -19,13 +21,18 @@ class PlainvoiceApp : Application() {
     val tagColorPreferences: TagColorPreferences by lazy { TagColorPreferences.getInstance(this) }
     val folderSyncPreferences: FolderSyncPreferences by lazy { FolderSyncPreferences.getInstance(this) }
 
+    // Damit auch Benachrichtigungen und Widget die gewaehlte Sprache nutzen.
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(LocalePreferences.wrap(base))
+    }
+
     override fun onCreate() {
         super.onCreate()
         PDFBoxResourceLoader.init(this)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 ReminderReceiver.CHANNEL_ID,
-                "Erinnerungen",
+                getString(R.string.notification_channel_reminders),
                 NotificationManager.IMPORTANCE_HIGH,
             )
             getSystemService(NotificationManager::class.java).createNotificationChannel(channel)

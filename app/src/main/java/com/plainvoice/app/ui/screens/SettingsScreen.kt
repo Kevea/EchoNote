@@ -1,12 +1,12 @@
 package com.plainvoice.app.ui.screens
 
+import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.core.os.LocaleListCompat
 import com.plainvoice.app.BuildConfig
 import com.plainvoice.app.R
+import com.plainvoice.app.util.LocalePreferences
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -543,33 +543,30 @@ fun SettingsScreen(
                 // dafuer keine eigene Preference. Ein Wechsel legt die Activity neu
                 // an — danach liest getApplicationLocales() den neuen Wert.
                 val languages = listOf(
-                    "" to stringResource(R.string.settings_language_system),
+                    LocalePreferences.SYSTEM_DEFAULT to stringResource(R.string.settings_language_system),
                     "en" to stringResource(R.string.settings_language_english),
                     "de" to stringResource(R.string.settings_language_german),
                 )
-                val current = AppCompatDelegate.getApplicationLocales()
-                    .toLanguageTags()
-                    .substringBefore('-')
+                val current = LocalePreferences.currentTag(context)
+                val applyLanguage: (String) -> Unit = { tag ->
+                    if (tag != current) {
+                        LocalePreferences.setTag(context, tag)
+                        // Neu erstellen, damit attachBaseContext erneut laeuft.
+                        (context as? Activity)?.recreate()
+                    }
+                }
 
                 languages.forEach { (tag, label) ->
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                AppCompatDelegate.setApplicationLocales(
-                                    LocaleListCompat.forLanguageTags(tag),
-                                )
-                            }
+                            .clickable { applyLanguage(tag) }
                             .padding(horizontal = 16.dp, vertical = 4.dp),
                     ) {
                         RadioButton(
                             selected = current == tag,
-                            onClick = {
-                                AppCompatDelegate.setApplicationLocales(
-                                    LocaleListCompat.forLanguageTags(tag),
-                                )
-                            },
+                            onClick = { applyLanguage(tag) },
                         )
                         Text(label)
                     }

@@ -2,6 +2,7 @@ package com.plainvoice.app
 
 import android.content.Intent
 import android.os.Bundle
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -39,6 +40,7 @@ import com.plainvoice.app.ui.theme.NoteTagColors
 import com.plainvoice.app.util.BackgroundStyle
 import com.plainvoice.app.util.ThemeSettings
 import com.plainvoice.app.util.scale
+import com.plainvoice.app.util.LocalePreferences
 
 private const val ROUTE_LIST = "list"
 private const val ROUTE_RECORD = "record"
@@ -48,6 +50,12 @@ private const val ROUTE_SETTINGS = "settings"
 class MainActivity : ComponentActivity() {
     private val pendingNoteId = mutableStateOf<Long?>(null)
     private val pendingStartRecording = mutableStateOf(false)
+
+    // Die in den Einstellungen gewaehlte Sprache muss hier greifen — danach sind
+    // die Ressourcen aufgeloest und eine Aenderung bliebe wirkungslos.
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(LocalePreferences.wrap(newBase))
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()

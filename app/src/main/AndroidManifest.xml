@@ -40,20 +40,12 @@
         android:theme="@style/Theme.Plainvoice">
 
         <!--
-          Sorgt dafuer, dass die in der App gewaehlte Sprache auch unter
-          Android 13 erhalten bleibt. Ab Android 13 uebernimmt das System die
-          Speicherung selbst; darunter uebernimmt dieser Dienst aus AppCompat
-          die Aufgabe. Ohne ihn faellt die App nach jedem Neustart auf die
-          Systemsprache zurueck.
+          Die Sprachwahl laeuft ueber LocalePreferences (attachBaseContext), nicht
+          ueber AppCompat: dessen Backport wirkt nur in einer AppCompatActivity,
+          und diese App nutzt ComponentActivity mit einem reinen Material-Theme.
+          android:localeConfig oben bleibt, damit ab Android 13 zusaetzlich der
+          System-Eintrag "App-Sprachen" erscheint.
         -->
-        <service
-            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
-            android:enabled="false"
-            android:exported="false">
-            <meta-data
-                android:name="autoStoreLocales"
-                android:value="true" />
-        </service>
 
         <activity
             android:name=".MainActivity"
