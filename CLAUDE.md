@@ -171,6 +171,27 @@ Das exportierte Schema liegt unter `app/schemas/` und gehört ins Repo.
 Datenbank an, bevor Room sie öffnet — inklusive `-wal` und `-shm`, sonst
 fehlten der Kopie die letzten Transaktionen.
 
+## Vertrieb
+
+Die App wird verkauft: **https://seraphinkai.gumroad.com/l/Plainvoice**
+(Pay what you want, Minimum 3 $, Vorschlag 10 $).
+
+- **Der Quellcode ist öffentlich, die fertigen Builds nicht.** Es werden
+  bewusst **keine GitHub-Releases** mehr erzeugt. Offener Code ist das, was die
+  Aussage „keine Netzwerkberechtigung" überprüfbar macht — er ist kein
+  Gratis-Download-Kanal. Früher lagen elf Releases mit Debug-APKs öffentlich
+  herum, die sind entfernt (PR #25).
+- **Die App kann nicht nach Updates suchen.** Ohne `INTERNET`-Berechtigung geht
+  das nicht, und genau damit wird geworben. Der Weg zum Nutzer ist Gumroads
+  Update-Mail. In den Einstellungen steht dafür der Link *Check for updates*
+  auf die Verkaufsseite, daneben *View on GitHub* zum Quellcode.
+- **Updates installieren sich über die alte Version**, weil derselbe Keystore
+  verwendet wird — Notizen bleiben erhalten. Dafür muss der `versionCode`
+  jedes Mal steigen.
+- Beim Ausliefern gehört eine `README.txt` neben die APK: Installation,
+  Sync-Anleitung, Update-Weg, Datenschutz. Käufer landen nach dem Download oft
+  nie wieder auf der Produktseite.
+
 ## Build & Release
 
 - Es gibt **keine lokale Android-SDK-Umgebung** in der Sandbox — jeder
@@ -187,6 +208,14 @@ fehlten der Kopie die letzten Transaktionen.
 - Secrets im Repo: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
   `KEY_PASSWORD`. Der Keystore selbst liegt auf UpTown unter `~/.keystores/`
   und auf der zweiten Festplatte; das Passwort zusätzlich in Vaultwarden.
+- **Zwei Artefakt-Sorten, nicht verwechseln:**
+  `plainvoice-release` (~18 MB) enthält die signierte APK und das AAB — **das
+  ist das Produkt**. `plainvoice-debug-apk` (~24 MB) ist der Debug-Build mit
+  applicationId `com.plainvoice.app.debug`. Zum Testen immer die Datei aus dem
+  **Gumroad-Download** nehmen, nicht aus den Actions-Artefakten.
+- `app_name` kommt **aus dem Build-Typ**, nicht aus `strings.xml`. Sonst heisst
+  der Debug-Build ebenfalls „Plainvoice" und installiert sich wegen der
+  abweichenden applicationId unbemerkt daneben statt darüber (PR #27).
 - Ablauf zum Synchronisieren: Feature-Branch → push → PR → merge (Squash).
 - **README bei jedem Release aktuell halten** (neue Features ergänzen) —
   das ist mittlerweile Standardvorgehen, nicht nur einmalig.
@@ -201,6 +230,9 @@ fehlten der Kopie die letzten Transaktionen.
   für `getSharedPreferences`) lässt die App beim Start abstürzen, noch bevor
   Oberfläche erscheint. Der übergebene `base`-Context genügt; SharedPreferences
   zeigen prozessweit auf dieselbe Datei.
+- Der Debug-Build installiert sich wegen `applicationIdSuffix = ".debug"`
+  **neben** der Release-App, nicht darüber. Wer beide antippt, hat zwei Apps
+  auf dem Gerät — seit PR #27 wenigstens mit unterscheidbaren Namen.
 - **Der CI-Build fängt Startfehler nicht ab** — er kompiliert nur. Alles, was in
   `attachBaseContext`, `Application.onCreate` oder der Room-Initialisierung
   schiefgehen kann, zeigt sich ausschliesslich auf dem Gerät. Nach Eingriffen an
